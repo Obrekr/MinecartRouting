@@ -1,0 +1,48 @@
+debug: false
+max-speed: 12
+tool-item: 271
+sign-radius: 3
+booster:
+    enable: true
+    block: 41
+    needredstone: false
+    speed: 100
+    relative: false
+    brakewhenunpowerd:
+        enable: false
+        speed: 25
+        relative: true
+    
+brake:
+    enable: true
+    block: 88
+    needredstone: false
+    speed: 50  
+    relative: true
+    boostwhenunpowerd:
+        enable: false
+        speed: 100
+        relative: false
+
+catcher:
+    enable: false
+    block: 45
+    needredstone: false
+    launchwhenunpowered:
+        enable: false
+        speed: 100
+        relative: false
+
+launcher:
+    enable: true
+    block: 49
+    needredstone: true
+    speed: 100
+    relative: false
+    catchwhenunpowered:
+        enable: true
+
+switch:
+    enable: true
+    block: 42
+    needredstone: false
