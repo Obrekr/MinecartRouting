@@ -42,9 +42,9 @@ public class AutoManager
 				Integer[] offset = directionToOffset(nextdir);
 				
 				rail = rail.getRelative(offset[0], offset[1], offset[2]);
-				if (!(rail.getTypeId() == 66 || rail.getTypeId() == 27 || rail.getTypeId() == 28))
+				if (!plugin.util.isRail(rail))
 				{	
-					plugin.debug("No more rails found!");
+					plugin.debug("No more rails found: {0}", dir);
 					break;
 				}
 				
@@ -53,7 +53,7 @@ public class AutoManager
 					nextroutingblock = rail.getRelative(0, -1, 0);
 					blockfound = true;
 					
-					plugin.debug("Next RoutingBlock found: {0}", nextroutingblock.getLocation().toString());
+					plugin.debug("Next RoutingBlock found: {0} (#{1})", plugin.util.getNameByBlock(nextroutingblock), plugin.util.getIdByBlock(nextroutingblock));
 					
 					updateBlocksInAutoDirection(nextroutingblock, true);
 				}else{
@@ -141,6 +141,8 @@ public class AutoManager
 	
 	public void updateBlocksInAutoDirection(Block b, Boolean reupdate)
 	{
+		plugin.debug("single update for: {0} (#{1})", plugin.util.getNameByBlock(b), plugin.util.getIdByBlock(b));
+
 		// remove old entries
 		removeAutoEntries(b);
 		
@@ -189,7 +191,7 @@ public class AutoManager
 				
 				if (!(rail.getTypeId() == 66 || rail.getTypeId() == 27 || rail.getTypeId() == 28))
 				{	
-					plugin.debug("No more rails found!");
+					plugin.debug("No more rails found: {0}", dir);
 					break;
 				}
 				
@@ -198,7 +200,7 @@ public class AutoManager
 					nextroutingblock = rail.getRelative(0, -1, 0);
 					blockfound = true;
 					
-					plugin.debug("Next RoutingBlock found: {0}", nextroutingblock.getLocation().toString());
+					plugin.debug("SINGLE MODE: next routingBlock found: {0} (#{1})", plugin.util.getNameByBlock(nextroutingblock), plugin.util.getIdByBlock(nextroutingblock));
 					
 					if (!reupdate)
 						updateBlocksInAutoDirection(nextroutingblock, true);
@@ -307,9 +309,11 @@ public class AutoManager
 		
 			String query = "UPDATE `mr_blocks` SET "+direction+"="+id+", "+direction+"_length="+length+" WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
 			plugin.database.update(query);
+			plugin.debug("Block set in database for direction: {0}", direction);
 		}else{
 			String query = "UPDATE `mr_blocks` SET "+direction+"=NULL, "+direction+"_length=NULL WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
 			plugin.database.update(query);
+			plugin.debug("Block UNset in database for direction: {0}", direction);
 		}
 	}
 	

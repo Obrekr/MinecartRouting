@@ -1,6 +1,6 @@
 name: MinecartRouting
 main: MinecartRouting.MinecartRouting
-version: 0.1.0
+version: 0.2.0
 permissions:
     minecartrouting.create.*:
         description: Allows player to create/modify all kind of Routingblocks
@@ -9,6 +9,7 @@ permissions:
             minecartrouting.create.*.other: true
     minecartrouting.create.*.own:
         description: Allows player to create/modify own Routingblocks
+        default: op
         children:
             minecartrouting.create.booster.own: true
             minecartrouting.create.brake.own: true
@@ -17,6 +18,7 @@ permissions:
             minecartrouting.create.switch.own: true
     minecartrouting.create.*.other:
         description: Allows player to modify others Routingblocks
+        default: op
         children:
             minecartrouting.create.booster.other: true
             minecartrouting.create.brake.other: true
@@ -31,6 +33,7 @@ permissions:
             minecartrouting.break.*.other: true
     minecartrouting.break.*.own:
         description: Allows player to break own Routingblocks
+        default: op
         children:
             minecartrouting.break.booster.own: true
             minecartrouting.break.brake.own: true
@@ -39,6 +42,7 @@ permissions:
             minecartrouting.break.switch.own: true
     minecartrouting.break.*.other:
         description: Allows player to break others Routingblocks
+        default: op
         children:
             minecartrouting.break.booster.other: true
             minecartrouting.break.brake.other: true
@@ -53,6 +57,7 @@ permissions:
             minecartrouting.benefit.*.other: true
     minecartrouting.benefit.*.own:
         description: Allows player to benefit from own Routingblocks
+        default: true
         children:
             minecartrouting.benefit.booster.own: true
             minecartrouting.benefit.brake.own: true
@@ -61,6 +66,7 @@ permissions:
             minecartrouting.benefit.switch.own: true
     minecartrouting.benefit.*.other:
         description: Allows player to benefit from others Routingblocks
+        default: true
         children:
             minecartrouting.benefit.booster.other: true
             minecartrouting.benefit.brake.other: true
@@ -70,97 +76,68 @@ permissions:
     
     minecartrouting.create.booster.own:
         description: Allows player to create/modify own Boosters
-        default: op
     minecartrouting.create.brake.own:
         description: Allows player to create/modify own Brakes
-        default: op
     minecartrouting.create.launcher.own:
         description: Allows player to create/modify own Launchers
-        default: op
     minecartrouting.create.catcher.own:
         description: Allows player to create/modify own Catchers
-        default: op
     minecartrouting.create.switch.own:
         description: Allows player to create/modify own Switchs
-        default: op
 
     minecartrouting.create.booster.other:
         description: Allows player to modify others Boosters
-        default: op
     minecartrouting.create.brake.other:
         description: Allows player to modify others Brakes
-        default: op
     minecartrouting.create.launcher.other:
         description: Allows player to modify others Launchers
-        default: op
     minecartrouting.create.catcher.other:
         description: Allows player to modify others Catchers
-        default: op
     minecartrouting.create.switch.other:
         description: Allows player to modify others Switchs
     
 
     minecartrouting.break.booster.own:
         description: Allows player to break own Boosters
-        default: op
     minecartrouting.break.brake.own:
         description: Allows player to break own Brakes
-        default: op
     minecartrouting.break.launcher.own:
         description: Allows player to break own Launchers
-        default: op
     minecartrouting.break.catcher.own:
         description: Allows player to break own Catchers
-        default: op
     minecartrouting.break.switch.own:
         description: Allows player to break own Switchs
-        default: op
         
     minecartrouting.break.booster.other:
         description: Allows player to break others Boosters
-        default: op
     minecartrouting.break.brake.other:
         description: Allows player to break others Brakes
-        default: op
     minecartrouting.break.launcher.other:
         description: Allows player to break others Launchers
-        default: op
     minecartrouting.break.catcher.other:
         description: Allows player to break others Catchers
-        default: op
     minecartrouting.break.switch.other:
         description: Allows player to break others Switchs
-        default: op
         
     
     minecartrouting.benefit.booster.own:
         description: Allows player to use own Boosters
-        default: true
     minecartrouting.benefit.brake.own:
         description: Allows player to use own Boosters
-        default: true
     minecartrouting.benefit.launcher.own:
         description: Allows player to use own Boosters
-        default: true
     minecartrouting.benefit.catcher.own:
         description: Allows player to use own Boosters
-        default: true
     minecartrouting.benefit.switch.own:
         description: Allows player to use own Boosters
-        default: true
         
     minecartrouting.benefit.booster.other:
         description: Allows player to use others Boosters
-        default: true
     minecartrouting.benefit.brake.other:
         description: Allows player to use others Boosters
-        default: true
     minecartrouting.benefit.launcher.other:
         description: Allows player to use others Boosters
-        default: true
     minecartrouting.benefit.catcher.other:
         description: Allows player to use others Boosters
-        default: true
     minecartrouting.benefit.switch.other:
         description: Allows player to use others Boosters
-        default: true 

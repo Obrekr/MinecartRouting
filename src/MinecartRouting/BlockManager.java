@@ -409,7 +409,7 @@ public class BlockManager {
 		String world = b.getWorld().getName();
 		String type = plugin.util.getTypeString(b);
 		
-		if (plugin.util.nameExists(name))
+		if (plugin.settingsManager.hasSignConfig(b) && plugin.util.nameExists(name))
 		{	
 			p.sendRawMessage(ChatColor.AQUA + "Name already exists!");
 			plugin.debug("name already exists: {0}", name);

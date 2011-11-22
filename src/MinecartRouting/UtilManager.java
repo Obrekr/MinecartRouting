@@ -42,23 +42,21 @@ public class UtilManager {
 		return false;
 	}
 	
-	public Integer getIdByName(String name)
+	public int getIdByName(String name)
 	{
 		String query = "SELECT id FROM mr_blocks WHERE name='"+name+"';";
 		ResultSet result = plugin.database.select(query);
 		int id = -1;
 		try {
 			if (result.next())
-			{
 				id = result.getInt("id");
-			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return id;
 	}
 	
-	public Integer getIdByBlock(Block b)
+	public int getIdByBlock(Block b)
 	{
 		String query = "SELECT id FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
 		ResultSet result = plugin.database.select(query);
@@ -281,7 +279,10 @@ public class UtilManager {
 		ResultSet result = plugin.database.select(query);
 		try {
 			if (result.next())
-				return result.getString("name");
+			{	String str = result.getString("name");
+				if (str != null)
+					return str;
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -290,11 +291,17 @@ public class UtilManager {
 	
 	public String getNameByBlock(Block b)
 	{
+		if (!plugin.settingsManager.hasSignConfig(b))
+			return "";
 		String query = "SELECT name FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
 		ResultSet result = plugin.database.select(query);
 		try {
 			if (result.next())
-				return result.getString("name");
+				if (result.next())
+				{	String str = result.getString("name");
+					if (str != null)
+						return str;
+				}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -303,6 +310,8 @@ public class UtilManager {
 	
 	public boolean nameExists(String name)
 	{
+		if (name.equals(""))
+			return false;
 		String query = "SELECT id FROM mr_blocks WHERE name='"+name+"';";
 		ResultSet result = plugin.database.select(query);
 		try {
@@ -348,16 +357,16 @@ public class UtilManager {
 					north_length = result.getInt("north_length");
 				}
 				if (plugin.util.getBlockById(result.getInt("east")) != null)
-				{	north = result.getInt("east");
-					north_length = result.getInt("east_length");
+				{	east = result.getInt("east");
+					east_length = result.getInt("east_length");
 				}
 				if (plugin.util.getBlockById(result.getInt("south")) != null)
-				{	north = result.getInt("south");
-					north_length = result.getInt("south_length");
+				{	south = result.getInt("south");
+					south_length = result.getInt("south_length");
 				}
 				if (plugin.util.getBlockById(result.getInt("west")) != null)
-				{	north = result.getInt("west");
-					north_length = result.getInt("west_length");
+				{	west = result.getInt("west");
+					west_length = result.getInt("west_length");
 				}
 				if (result.getString("conditions") != null)
 					conditions = result.getString("conditions");
@@ -381,5 +390,11 @@ public class UtilManager {
 		if (plugin.settingsManager.hasSignConfig(b))
 			p.sendRawMessage(ChatColor.GOLD + "Conditions: "+conditions);
 		p.sendRawMessage(ChatColor.AQUA + "---------------------");
+	}
+
+	public boolean isRail(Block b) {
+		if(b.getTypeId() == 66 || b.getTypeId() == 27 || b.getTypeId() == 28)
+			return true;
+		return false;
 	}
 }
