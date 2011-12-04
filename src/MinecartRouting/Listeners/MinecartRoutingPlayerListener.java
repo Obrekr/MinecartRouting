@@ -4,11 +4,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerListener;
 
 import MinecartRouting.MinecartRouting;
+import MinecartRouting.MinecartRoutingMinecart;
 
 public class MinecartRoutingPlayerListener extends PlayerListener {
 	
@@ -28,7 +30,15 @@ public class MinecartRoutingPlayerListener extends PlayerListener {
 		// DestinationSign: Destination set
 		if ( event.getAction() == Action.RIGHT_CLICK_BLOCK && (event.getClickedBlock().getType().equals(Material.WALL_SIGN) || event.getClickedBlock().getType().equals(Material.SIGN_POST)) )
 		{
-			plugin.automanager.setDestination(event.getClickedBlock(), event.getPlayer());
+			Block b = event.getClickedBlock();
+			Player p = event.getPlayer();
+			MinecartRoutingMinecart v = plugin.util.findNextOwnVehicle(p);
+			if (v == null)
+			{
+				p.sendRawMessage(ChatColor.AQUA + "You must first place a vehicle!");
+				return;
+			}
+			plugin.automanager.setDestination(b, p, v);
 		}
 		
 		Block b = null;
@@ -54,10 +64,8 @@ public class MinecartRoutingPlayerListener extends PlayerListener {
 				{
 					plugin.debug("Updating Block...");	
 					plugin.blockmanager.update(b, event.getPlayer());
-				}else if (plugin.settingsManager.hasSignConfig(b)){
-					plugin.debug("Updating only Rails...");
-					plugin.automanager.updateBlockInAllDirections(b);
-					event.getPlayer().sendRawMessage(ChatColor.AQUA + "Rails updated!");
+				}else if (plugin.blockmanager.hasSignConfig(b)){
+					plugin.blockmanager.updateRails(b, event.getPlayer());
 				}
 			}
 		}

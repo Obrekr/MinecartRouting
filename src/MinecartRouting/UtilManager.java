@@ -8,6 +8,8 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -71,10 +73,10 @@ public class UtilManager {
 		return id;
 	}
 
-	public boolean hasRecheadDestination(Block b, Player p)
+	public boolean hasRecheadDestination(Block b, MinecartRoutingMinecart v)
 	{
 		int id = getIdByBlock(b);
-		int iddest = plugin.settingsManager.routes.get(p).getDestination();
+		int iddest = v.route.getDestination();
 		
 		plugin.debug("Reaching destination? RoutingBlock: {0}, Destination: {1}", id, iddest);
 		
@@ -99,6 +101,7 @@ public class UtilManager {
 	public BlockFace velocityToDirection(Vector vect)
 	{
 		
+		vect.normalize();
 		if (vect.getBlockX() == -1)
 			return BlockFace.SOUTH;
 		if (vect.getBlockX() == 1)
@@ -130,76 +133,6 @@ public class UtilManager {
 		}
 		
 		return dir;
-	}
-
-	public RoutingBlocks getType(Block b)
-	{
-		if ( plugin.settingsManager.getConfig().getBoolean("booster.enable") && (b.getTypeId() ==  plugin.settingsManager.getConfig().getInt("booster.block")) )
-			return RoutingBlocks.BOOSTER;
-		
-		if ( plugin.settingsManager.getConfig().getBoolean("brake.enable") && (b.getTypeId() ==  plugin.settingsManager.getConfig().getInt("brake.block")) )
-			return RoutingBlocks.BRAKE;
-		
-		if ( plugin.settingsManager.getConfig().getBoolean("catcher.enable") && (b.getTypeId() ==  plugin.settingsManager.getConfig().getInt("catcher.block")) )
-			return RoutingBlocks.CATCHER;
-		
-		if ( plugin.settingsManager.getConfig().getBoolean("launcher.enable") && (b.getTypeId() ==  plugin.settingsManager.getConfig().getInt("launcher.block")) )
-			return RoutingBlocks.LAUNCHER;
-		
-		if ( plugin.settingsManager.getConfig().getBoolean("switch.enable") && (b.getTypeId() ==  plugin.settingsManager.getConfig().getInt("switch.block")) )
-			return RoutingBlocks.SWITCH;
-		return null;
-	}
-	
-	public String getTypeString(Block b)
-	{
-		String type = "";
-		switch (getType(b))
-		{
-		case BOOSTER:
-			type = "booster";
-			break;
-		case BRAKE:
-			type = "brake";
-			break;
-		case CATCHER:
-			type = "catcher";
-		case LAUNCHER:
-			type = "launcher";
-			break;
-		case SWITCH:
-			type = "switch";
-			break;
-		}
-		return type;
-	}
-	
-	public boolean isEnabled(RoutingBlocks block)
-	{
-		switch (block)
-		{
-		case BOOSTER:
-			if (plugin.settingsManager.getConfig().getBoolean("booster.enable"))
-				return true;
-			break;
-		case BRAKE:
-			if (plugin.settingsManager.getConfig().getBoolean("brake.enable"))
-				return true;
-			break;
-		case CATCHER:
-			if (plugin.settingsManager.getConfig().getBoolean("catcher.enable"))
-				return true;
-			break;
-		case LAUNCHER:
-			if (plugin.settingsManager.getConfig().getBoolean("launcher.enable"))
-				return true;
-			break;
-		case SWITCH:
-			if (plugin.settingsManager.getConfig().getBoolean("switch.enable"))
-				return true;
-			break;
-		}
-		return false;
 	}
 	
 	public String getToDirection(String fromdir, String todir)
@@ -291,7 +224,7 @@ public class UtilManager {
 	
 	public String getNameByBlock(Block b)
 	{
-		if (!plugin.settingsManager.hasSignConfig(b))
+		if (!plugin.blockmanager.hasSignConfig(b))
 			return "";
 		String query = "SELECT name FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
 		ResultSet result = plugin.database.select(query);
@@ -326,13 +259,15 @@ public class UtilManager {
 	public void sendInfo(Block b, Player p)
 	{
 		// owner, name(#id), position, type,  nextblocks (distance), conditions
+		RoutingBlock rb = plugin.blockmanager.getRoutingBlock(b);
+		
 		String owner = "";
 		String name = "";
 		int id = -1;
 		int x = b.getX();
 		int y = b.getY();
 		int z = b.getZ();
-		String type = getTypeString(b).substring(0, 1).toUpperCase() + getTypeString(b).substring(1);
+		String type = rb.getTypeString();
 		int north = -1;
 		int east = -1;
 		int south = -1;
@@ -387,7 +322,7 @@ public class UtilManager {
 			p.sendRawMessage(ChatColor.GOLD + "South: "+getNameById(south)+" (#"+south+")("+south_length+" blocks)");
 		if (west != -1)
 			p.sendRawMessage(ChatColor.GOLD + "West: "+getNameById(west)+" (#"+west+")("+west_length+" blocks)");
-		if (plugin.settingsManager.hasSignConfig(b))
+		if (rb.hasSignConfig())
 			p.sendRawMessage(ChatColor.GOLD + "Conditions: "+conditions);
 		p.sendRawMessage(ChatColor.AQUA + "---------------------");
 	}
@@ -396,5 +331,23 @@ public class UtilManager {
 		if(b.getTypeId() == 66 || b.getTypeId() == 27 || b.getTypeId() == 28)
 			return true;
 		return false;
+	}
+
+	public MinecartRoutingMinecart findNextOwnVehicle(Player p) {
+		double closest = Double.MAX_VALUE;
+    	MinecartRoutingMinecart closestCart = null;
+    	for (Entity le : p.getWorld().getEntities())
+    	{
+    		if (le instanceof Minecart)
+    		{
+    			double distance = le.getLocation().toVector().distance(p.getLocation().toVector());
+    			if (plugin.settingsManager.vehicles.containsKey(le.getEntityId()) && plugin.settingsManager.vehicles.get(le.getEntityId()).owner.equals(p) && distance < closest)
+    			{
+    				closestCart = plugin.settingsManager.vehicles.get(le.getEntityId());
+    				closest = distance;
+    			}
+    		}
+    	}
+		return closestCart;
 	}
 }

@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
@@ -15,8 +14,7 @@ import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.PoweredMinecart;
 import org.bukkit.entity.StorageMinecart;
-import org.bukkit.entity.Vehicle;
-import org.bukkit.util.Vector;
+
 
 public class BlockManager {
 	
@@ -27,217 +25,100 @@ public class BlockManager {
 		plugin = instance;
 	}
 	
-	public void booster(Block b, Vehicle v, Boolean isPowered)
+	public boolean isRightPowered(Block b, Boolean ignoreredstone, Boolean redstone)
 	{
-		if (!positionChanged(v, b))
-			return;
-		
-		Player p = plugin.settingsManager.owner.get(v);
-		if (!( (p.hasPermission("minecartrouting.benefit.booster.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.booster.other")))
-		{	
-			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to use this RoutingBlock");
-			return;
-		}
-		
-		// booster needs redstone and if is powered
-		if (!plugin.settingsManager.getConfig().getBoolean("booster.needredstone") || b.isBlockPowered())
-		{
-			plugin.debug("Boosting...");
-			speed(v, (double) plugin.settingsManager.getConfig().getInt("booster.speed"), plugin.settingsManager.getConfig().getBoolean("booster.relative"));
-		}
-		
-		//booster needs redstone, is unpowered, brakewhenunpowered is enabled
-		if (plugin.settingsManager.getConfig().getBoolean("booster.needredstone") && plugin.settingsManager.getConfig().getBoolean("booster.brakewhenunpowered.enable") && !b.isBlockPowered())
-		{
-			plugin.debug("Brakeing...");
-			speed(v, (double) plugin.settingsManager.getConfig().getInt("booster.brakewhenunpowered.speed"), plugin.settingsManager.getConfig().getBoolean("boost.brakewhenunpowered.relative"));
-		}
+		if (ignoreredstone)
+			return true;
+		if (redstone == false && !(b.isBlockIndirectlyPowered() || b.getRelative(BlockFace.UP).isBlockIndirectlyPowered()))
+			return true;
+		if  (redstone == true && (b.isBlockIndirectlyPowered() || b.getRelative(BlockFace.UP).isBlockIndirectlyPowered()))
+			return true;
+		return false;
 	}
 	
-	public void brake(Block b, Vehicle v, Boolean isPowered)
+	public RoutingBlock getRoutingBlock(Block b)
 	{
-		if (!positionChanged(v, b))
-			return;
-		
-		Player p = plugin.settingsManager.owner.get(v);
-		if (!( (p.hasPermission("minecartrouting.benefit.brake.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.brake.other")))
-		{	
-			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to use this RoutingBlock");
-			return;
-		}
-		
-		// Brake needs redstone and if is powered
-		if (!plugin.settingsManager.getConfig().getBoolean("brake.needredstone") || isPowered)
-		{
-			plugin.debug("Brakeing...");
-			speed(v, (double) plugin.settingsManager.getConfig().getInt("brake.speed"), plugin.settingsManager.getConfig().getBoolean("brake.relative"));
-		}
-		
-		//brake needs redstone, is unpowered, boostwhenunpowered is enabled
-		if (plugin.settingsManager.getConfig().getBoolean("brake.needredstone") && plugin.settingsManager.getConfig().getBoolean("brake.boostwhenunpowered.enable") && !isPowered)
-		{
-			plugin.debug("Boosting...");
-			speed(v, (double) plugin.settingsManager.getConfig().getInt("brake.boostwhenunpowered.speed"), plugin.settingsManager.getConfig().getBoolean("brake.boostwhenunpowered.relative"));
-		}
+		return plugin.settingsManager.routingblocks.get(b.getTypeId());
 	}
 	
-	public void launcher(Block b, Vehicle v, Boolean isPowered)
+	public Boolean hasSignConfig(Block b)
 	{
-		Player p = plugin.settingsManager.owner.get(v);
-		if (!( (p.hasPermission("minecartrouting.benefit.launcher.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.launcher.other")))
-		{	
-			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to use this RoutingBlock");
-			return;
-		}
-		
-		// Launcher needs redstone and if is powered
-		if (!plugin.settingsManager.getConfig().getBoolean("launcher.needredstone") || isPowered)
-		{
-			if (!positionChanged(v, b))
-				return;
-			plugin.debug("Launching...");
-			launch(v,  plugin.util.directionToVector(getDirection(b,v, true, false)), (double) plugin.settingsManager.getConfig().getInt("launcher.speed"), plugin.settingsManager.getConfig().getBoolean("launcher.relative"));
-		}
-		//Launcher needs redstone, is unpowered, catchwhenunpowered is enabled
-		if (plugin.settingsManager.getConfig().getBoolean("launcher.needredstone") && plugin.settingsManager.getConfig().getBoolean("launcher.catchwhenunpowered.enable") && !isPowered)
-		{
-			if (!positionChanged(v, b, true))
-				return;
-			plugin.debug("Catching...");
-			stop(v, b, getDirection(b,v, false, true));		
-		}
+		RoutingBlock rb = getRoutingBlock(b);
+		if (rb == null)
+			return false;
+		return rb.hasSignConfig();
 	}
 	
-	public void catcher(Block b, Vehicle v, Boolean isPowered)
+	public Boolean hasPermission(RoutingBlock block, Player p, boolean create, boolean own)
 	{
-		Player p = plugin.settingsManager.owner.get(v);
-		if (!( (p.hasPermission("minecartrouting.benefit.catcher.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.catcher.other")))
-		{	
-			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to use this RoutingBlock");
-			return;
-		}
-		
-		// Catcher needs redstone and if is powered
-		if (!plugin.settingsManager.getConfig().getBoolean("catcher.needredstone") || isPowered)
+		List<String> names = block.getTypesStringList();
+		if (names == null)
+			return false;
+		Boolean result = false;
+		for (String name : names)
 		{
-			if (!positionChanged(v, b, true))
-				return;
-			plugin.debug("Catching...");
-			stop(v, b, getDirection(b, v, false, true));
+			if (create)
+			{
+				if (own)
+				{
+					if (p.hasPermission("minecartrouting.create."+name+".own"))
+						result = true;
+					else
+						return false;
+				}else{
+					if (p.hasPermission("minecartrouting.create."+name+".other"))
+						result = true;
+					else
+						return false;
+				}
+			}else{
+				if (own)
+				{
+					if (p.hasPermission("minecartrouting.break."+name+".own"))
+						result = true;
+					else
+						return false;
+				}else{
+					if (p.hasPermission("minecartrouting.break."+name+".other"))
+						result = true;
+					else
+						return false;
+				}
+			}
 		}
-		// Catcher needs redstone, is unpowered, launchwhenunpowered is enabled
-		if (plugin.settingsManager.getConfig().getBoolean("catcher.needredstone") && plugin.settingsManager.getConfig().getBoolean("catcher.launchwhenunpowered.enable") && !isPowered)
-		{
-			if (!positionChanged(v, b))
-				return;
-			plugin.debug("Launching...");
-			launch(v, plugin.util.directionToVector(getDirection(b, v, true, false)), (double) plugin.settingsManager.getConfig().getInt("catcher.launchwhenunpowered.speed"), plugin.settingsManager.getConfig().getBoolean("catcher.launchwhenunpowered.relative"));		
-		}
+		return result;
 	}
 	
-	public void switcher(Block b, Vehicle v, Boolean isPowered)
+	public void setRail(Block rail, BlockFace one, BlockFace two)
 	{
-		if (!positionChanged(v, b))
-			return;
-		
-		Player p = plugin.settingsManager.owner.get(v);
-		if (!( (p.hasPermission("minecartrouting.benefit.switch.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.switch.other")))
-		{	
-			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to use this RoutingBlock");
-			return;
-		}
-		
-		
-		if (!(!plugin.settingsManager.getConfig().getBoolean("switch.needredstone") || isPowered))
-				return;
-		plugin.debug("Switching...");
-		
-		BlockFace destination = getDirection(b, v);
-		BlockFace origin = plugin.util.velocityToDirection(v.getVelocity().normalize());
-		Block rail = b.getRelative(0,1, 0);
-		
 		byte raildata = rail.getData();
-		if ( (destination == BlockFace.NORTH && origin == BlockFace.SOUTH ) || (destination == BlockFace.SOUTH && origin == BlockFace.NORTH) )
+		if ( (one == BlockFace.NORTH && two == BlockFace.SOUTH ) || (one == BlockFace.SOUTH && two == BlockFace.NORTH) )
 			raildata = 1;	// North-South
-		if ( (destination == BlockFace.EAST && origin == BlockFace.WEST) || (destination == BlockFace.WEST && origin == BlockFace.EAST) )
+		if ( (one == BlockFace.EAST && two == BlockFace.WEST) || (one == BlockFace.WEST && two == BlockFace.EAST) )
 			raildata = 0;	// East-West
-		if ( (destination == BlockFace.NORTH && origin == BlockFace.EAST) || (destination == BlockFace.EAST && origin == BlockFace.NORTH) )
+		if ( (one == BlockFace.NORTH && two == BlockFace.EAST) || (one == BlockFace.EAST && two == BlockFace.NORTH) )
 			raildata = 8;	// North-East-Corner
-		if ( (destination == BlockFace.SOUTH && origin == BlockFace.EAST) || (destination == BlockFace.EAST && origin == BlockFace.SOUTH) )
+		if ( (one == BlockFace.SOUTH && two == BlockFace.EAST) || (one == BlockFace.EAST && two == BlockFace.SOUTH) )
 			raildata = 9;	// South-East-Corner
-		if ( (destination == BlockFace.SOUTH && origin == BlockFace.WEST) || (destination == BlockFace.WEST && origin == BlockFace.SOUTH) )
+		if ( (one == BlockFace.SOUTH && two == BlockFace.WEST) || (one == BlockFace.WEST && two == BlockFace.SOUTH) )
 			raildata = 6;	// South-West-Corner
-		if ( (destination == BlockFace.NORTH && origin == BlockFace.WEST) || (destination == BlockFace.WEST && origin == BlockFace.NORTH) )
+		if ( (one == BlockFace.NORTH && two == BlockFace.WEST) || (one == BlockFace.WEST && two == BlockFace.NORTH) )
 			raildata = 7;	// North-West-Corner
 		rail.setData(raildata);
-		plugin.debug("Raildata: {0}", raildata);
-		plugin.settingsManager.vehicles.forcePut(v, v.getLocation());
-		
 	}
 	
-	private void speed(Vehicle v, double speed, boolean relative)
-	{
-		// new speed relative to previous speed 
-		if (relative)
-		{
-			double multiplier = speed / 100.0;
-			Vector newVelocity = v.getVelocity().multiply(multiplier);
-			v.setVelocity(newVelocity);
-		}else{// new speed non-relative to previous speed
-			double maxmultiplier = plugin.settingsManager.getConfig().getInt("max-speed") / 20.0;
-			double multiplier = speed / 100.0 * maxmultiplier;
-			Vector newVelocity = v.getVelocity().normalize().multiply(multiplier);
-			v.setVelocity(newVelocity);
-
-			plugin.debug("Speed: {0}, Multiplier: {1}", speed, multiplier);
-		}
-		
-		plugin.settingsManager.vehicles.forcePut(v, v.getLocation());
-	}
-	
-	private void launch(Vehicle v, Vector direction, double speed, boolean relative)
-	{
-		plugin.debug("Direction-Vector: {0}", direction.toString());
-		v.setVelocity(direction);
-		speed(v, speed, relative);	
-		
-		plugin.settingsManager.vehicles.forcePut(v, v.getLocation());
-	}
-	
-	private void stop(Vehicle v, Block b, BlockFace direction)
-	{
-		if (!(direction == BlockFace.UP))
-			return;
-		
-		v.setVelocity(new Vector(0,0,0));
-		plugin.settingsManager.vehicles.forcePut(v, v.getLocation());
-			
-		Location loc = b.getRelative(BlockFace.UP).getLocation();
-		loc.setX(loc.getX() + 0.5);
-		loc.setY(loc.getY() + 0.5);
-		loc.setZ(loc.getZ() + 0.5);
-		v.teleport(loc);
-			
-		plugin.debug("Stopped! Location: {0}", loc.toString());
-		
-	}
-	
-	private BlockFace getDirection(Block b, Vehicle v)
+	public BlockFace getDirection(Block b, MinecartRoutingMinecart v)
 	{
 		return getDirection(b, v, false, false);
 	}
 	
-	private BlockFace getDirection(Block b, Vehicle v, Boolean launching, Boolean catching)
+	public BlockFace getDirection(Block b, MinecartRoutingMinecart v, Boolean launching, Boolean catching)
 	{
-		// Reached Destination?
-		if (v.getPassenger() instanceof Player)
-		{
-			Player p = (Player) v.getPassenger();
-			if (plugin.settingsManager.routes.containsKey(p) && plugin.util.hasRecheadDestination(b, p))
-			{	
-				plugin.settingsManager.routes.remove(p);
-				p.sendRawMessage(ChatColor.AQUA + "You have reached your destination!");
-			}
+		Player p = v.owner;
+		if (v.hasRoute() && plugin.util.hasRecheadDestination(b, v))
+		{	
+			v.removeRoute();
+			p.sendRawMessage(ChatColor.AQUA + "Your cart #"+v.cart.getEntityId()+" has reached its destination!");
 		}
 		
 		// get Conditions
@@ -263,16 +144,12 @@ public class BlockManager {
 			String todirection = lines[i].split(":")[2];
 			String options = lines[i].split(":")[1];
 			
-			from[i] = plugin.util.StringToDirection(fromdirection);
-			to[i] = plugin.util.StringToDirection(todirection);
-			conditions[i] = options;
-			
-			plugin.debug("From{0}: {1}", i, fromdirection);
-			plugin.debug("Option{0}: {1}", i, options);
-			plugin.debug("To{0}: {1}", i, todirection);
+			from[i] = plugin.util.StringToDirection(fromdirection.toLowerCase());
+			to[i] = plugin.util.StringToDirection(todirection.toLowerCase());
+			conditions[i] = options.toLowerCase();
 		}
 
-		BlockFace fromdirection = plugin.util.velocityToDirection(v.getVelocity().normalize());
+		BlockFace fromdirection = plugin.util.velocityToDirection(v.cart.getVelocity().normalize());
 		plugin.debug("Origin: {0}", fromdirection);
 		
 		BlockFace destination = BlockFace.SELF;
@@ -281,25 +158,25 @@ public class BlockManager {
 		{
 			if (from[d] == fromdirection || launching)
 			{
-				if ( (v.getPassenger() instanceof Player) && (conditions[d].equals("#"+((Player) v.getPassenger()).getDisplayName())) )
+				if ( (v.cart.getPassenger() instanceof Player) && (conditions[d].equals("#"+((Player) v.cart.getPassenger()).getDisplayName())) )
 				{
 					destination = to[d];
 					break;
 				}
 				
-				if ( v.getPassenger() instanceof Player && conditions[d].equals("player") )
+				if ( v.cart.getPassenger() instanceof Player && conditions[d].equals("player") )
 				{
 					destination = to[d];
 					break;
 				}
 					
-				if ( (v.getPassenger() instanceof Animals || v.getPassenger() instanceof Monster) && conditions[d].equals("mob") )
+				if ( (v.cart.getPassenger() instanceof Animals || v.cart.getPassenger() instanceof Monster) && conditions[d].equals("mob") )
 				{
 					destination = to[d];
 					break;
 				}
 					
-				if ( v.isEmpty()  && conditions[d].equals("empty"))
+				if ( v.cart.isEmpty()  && conditions[d].equals("empty"))
 				{
 					destination = to[d];
 					break;
@@ -323,16 +200,12 @@ public class BlockManager {
 					break;
 				}
 				
-				if (conditions[d].equals("auto") && v.getPassenger() instanceof Player)
+				if (conditions[d].equals("auto") && v.hasRoute())
 				{
 					plugin.debug("Starting AutoRouting...");
-					Player p = (Player) v.getPassenger();
-					if (plugin.settingsManager.routes.containsKey(p))
-					{
-						destination = plugin.automanager.getDirection(b, p);
-						if (!(destination == BlockFace.SELF))
-							break;
-					}
+					destination = plugin.automanager.getDirection(b, p, v);
+					if (!(destination == BlockFace.SELF))
+						break;
 				}
 			}
 		}
@@ -349,35 +222,6 @@ public class BlockManager {
 	
 
 	
-	private boolean positionChanged(Vehicle v, Block b)
-	{
-		return positionChanged(v, b, false);
-	}
-	
-	private boolean positionChanged(Vehicle v, Block b, boolean catcher)
-	{
-		Location oldloc = plugin.settingsManager.vehicles.get(v);
-		Location oldblock = plugin.settingsManager.passedBlocks.get(v);
-		
-		if (b.getLocation().equals(oldblock))
-		{
-				plugin.debug("Same RoutingBlock!");
-		}else{
-		
-			plugin.debug("New RoutingBlock!");
-			plugin.settingsManager.passedBlocks.remove(v);
-			plugin.settingsManager.passedBlocks.put(v, b.getLocation());
-			return true;
-		}
-		
-		if (catcher && v.getLocation().distance(oldloc) > 0.2 && b.getBlockPower() == 0)
-		{
-			plugin.debug("ReCatching: \n{0}\n{1}", oldloc.toString(), v.getLocation().toString());
-			return true;
-		}
-		return false;
-	}
-
 	public boolean exists(Block b)
 	{
 		String query = "SELECT id FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
@@ -393,23 +237,24 @@ public class BlockManager {
 	
 	public boolean add(Block b, Player p)
 	{
-		if (!p.hasPermission("minecartrouting.create."+plugin.util.getTypeString(b)+".own"))
+		RoutingBlock rb = getRoutingBlock(b);
+		if (!hasPermission(rb, p, true, true))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to create this RoutingBlock");
 			return false;
 		}
-		
+
 		String owner = p.getName();
 		String[] signs = readSigns(b);
-		String conditions = signs[0];
-		String name = signs[1];
+		String conditions = signs[0].toLowerCase();
+		String name = signs[1].toLowerCase();
 		int x = b.getX();
 		int y = b.getY();
 		int z = b.getZ();
 		String world = b.getWorld().getName();
-		String type = plugin.util.getTypeString(b);
+		String type = rb.getTypeString();
 		
-		if (plugin.settingsManager.hasSignConfig(b) && plugin.util.nameExists(name))
+		if (rb.hasSignConfig() && plugin.util.nameExists(name))
 		{	
 			p.sendRawMessage(ChatColor.AQUA + "Name already exists!");
 			plugin.debug("name already exists: {0}", name);
@@ -425,8 +270,10 @@ public class BlockManager {
 		String query = "INSERT INTO `mr_blocks` ('x', 'y', 'z','world', 'type', 'owner', 'conditions', 'name') VALUES("+x+","+y+","+z+",'"+world+"','"+type+"','"+owner+"','"+conditions+"', '"+name+"');";
 		plugin.database.insert(query);
 		
-		if (plugin.settingsManager.hasSignConfig(b))
+		if (rb.hasSignConfig())
 			plugin.automanager.updateBlockInAllDirections(b);
+		
+		plugin.updateGraph();
 		
 		p.sendRawMessage(ChatColor.AQUA + "Block added!");
 		plugin.debug("Block added: {0}", b.getLocation().toString());
@@ -435,14 +282,15 @@ public class BlockManager {
 	
 	public boolean remove(Block b, Player p)
 	{
-		if (!( (p.hasPermission("minecartrouting.break."+plugin.util.getTypeString(b)+".own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit."+plugin.util.getTypeString(b)+".other")))
+		RoutingBlock rb = getRoutingBlock(b);
+		if (!( (hasPermission(rb, p, false, true) && plugin.util.isOwner(b, p)) || hasPermission(rb, p, false, false) ))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to delete this RoutingBlock");
 			return false;
 		}
 		
 		List<Integer> toupdate = new ArrayList<Integer>();
-		if (plugin.settingsManager.hasSignConfig(b))
+		if (rb.hasSignConfig())
 		{
 			int blockid = plugin.util.getIdByBlock(b);
 			String query = "SELECT id FROM mr_blocks WHERE north="+blockid+" OR west="+blockid+" OR east="+blockid+" OR south="+blockid+";";
@@ -461,8 +309,10 @@ public class BlockManager {
 		String query = "DELETE FROM `mr_blocks` WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
 		plugin.database.delete(query);
 		
-		if (plugin.settingsManager.hasSignConfig(b))
+		if (rb.hasSignConfig())
 			plugin.automanager.remove(toupdate);
+		
+		plugin.updateGraph();
 		
 		p.sendRawMessage(ChatColor.AQUA + "Block removed!");
 		plugin.debug("Block removed: {0}", b.getLocation().toString());
@@ -471,15 +321,16 @@ public class BlockManager {
 	
 	public boolean update(Block b, Player p)
 	{
-		if (!( (p.hasPermission("minecartrouting.create."+plugin.util.getTypeString(b)+".own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.create."+plugin.util.getTypeString(b)+".other")))
+		RoutingBlock rb = getRoutingBlock(b);
+		if (!( (hasPermission(rb, p, true, true) && plugin.util.isOwner(b, p)) ||hasPermission(rb, p, true, false) ))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to modify this RoutingBlock");
 			return false;
 		}
 		
 		String[] signs = readSigns(b);
-		String conditions = signs[0];
-		String name = signs[1];
+		String conditions = signs[0].toLowerCase();
+		String name = signs[1].toLowerCase();
 		
 		if (!(!plugin.util.nameExists(name) || plugin.util.getIdByName(name) == plugin.util.getIdByBlock(b)))
 		{	
@@ -497,11 +348,30 @@ public class BlockManager {
 		String query = "UPDATE `mr_blocks` SET conditions='"+conditions+"', name='"+name+"' WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
 		plugin.database.update(query);
 		
-		if (plugin.settingsManager.hasSignConfig(b))
+		if (rb.hasSignConfig())
 			plugin.automanager.updateBlockInAllDirections(b);
+		
+		plugin.updateGraph();
 		
 		p.sendRawMessage(ChatColor.AQUA + "Block updated!");
 		plugin.debug("Block updated: {0}", b.getLocation().toString());
+		return true;
+	}
+	
+	public boolean updateRails(Block b, Player p)
+	{
+		RoutingBlock rb = getRoutingBlock(b);
+		if (!( (hasPermission(rb, p, true, true) && plugin.util.isOwner(b, p)) || hasPermission(rb, p, true, false) ))
+		{	
+			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to modify this RoutingBlock");
+			return false;
+		}
+		
+		plugin.debug("Updating only Rails...");
+		plugin.automanager.updateBlockInAllDirections(b);
+		plugin.updateGraph();
+		
+		p.sendRawMessage(ChatColor.AQUA + "Rails updated!");
 		return true;
 	}
 	

@@ -35,7 +35,6 @@ public class MinecartRouting extends JavaPlugin{
 	public void onEnable()
 	{ 	
 		settingsManager.load();
-		settingsManager.save();
 		database = new SQLiteCore("MinecartRouting", this.getDataFolder().toString());
 		if (!database.existsTable("mr_blocks"))
 		{
@@ -101,25 +100,25 @@ public class MinecartRouting extends JavaPlugin{
 				graph.addVertex(south);
 				graph.addVertex(west);
 				
-				if (util.getBlockById(north) != null && settingsManager.hasSignConfig(util.getBlockById(north)))
+				if (util.getBlockById(north) != null && blockmanager.hasSignConfig(util.getBlockById(north)))
 				{
 					DefaultWeightedEdge edge = graph.addEdge(id, north);
 					graph.setEdgeWeight(edge, n);
 				}
 				
-				if (util.getBlockById(east) != null && settingsManager.hasSignConfig(util.getBlockById(east)))
+				if (util.getBlockById(east) != null && blockmanager.hasSignConfig(util.getBlockById(east)))
 				{
 					DefaultWeightedEdge edge = graph.addEdge(id, east);
 					graph.setEdgeWeight(edge, e);
 				}
 				
-				if (util.getBlockById(south) != null && settingsManager.hasSignConfig(util.getBlockById(south)))
+				if (util.getBlockById(south) != null && blockmanager.hasSignConfig(util.getBlockById(south)))
 				{
 					DefaultWeightedEdge edge = graph.addEdge(id, south);
 					graph.setEdgeWeight(edge, s);
 				}
 				
-				if (util.getBlockById(west) != null && settingsManager.hasSignConfig(util.getBlockById(west)))
+				if (util.getBlockById(west) != null && blockmanager.hasSignConfig(util.getBlockById(west)))
 				{
 					DefaultWeightedEdge edge = graph.addEdge(id, west);
 					graph.setEdgeWeight(edge, w);

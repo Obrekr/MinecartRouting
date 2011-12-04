@@ -1,6 +1,7 @@
 package MinecartRouting.Listeners;
 
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -10,8 +11,10 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockRedstoneEvent;
 
+import MinecartRouting.DoActionRunnable;
 import MinecartRouting.MinecartRouting;
-import MinecartRouting.RoutingBlocks;
+import MinecartRouting.MinecartRoutingMinecart;
+import MinecartRouting.RoutingBlock;
 
 public class MinecartRoutingBlockListener extends BlockListener {
 	
@@ -39,23 +42,15 @@ public class MinecartRoutingBlockListener extends BlockListener {
 
 	public void onBlockRedstoneChange(BlockRedstoneEvent event)
 	{
-
-		
 		if (!(event.getOldCurrent() == 0 && event.getNewCurrent() > 0))
 			return;
 
-		Block redstone = event.getBlock();
-		Block b = null;
-		if (plugin.settingsManager.isRoutingBlock(redstone.getRelative(BlockFace.NORTH)))
-				b = redstone.getRelative(BlockFace.NORTH);
-		if (plugin.settingsManager.isRoutingBlock(redstone.getRelative(BlockFace.EAST)))
-			b = redstone.getRelative(BlockFace.EAST);
-		if (plugin.settingsManager.isRoutingBlock(redstone.getRelative(BlockFace.SOUTH)))
-			b = redstone.getRelative(BlockFace.SOUTH);
-		if (plugin.settingsManager.isRoutingBlock(redstone.getRelative(BlockFace.WEST)))
-			b = redstone.getRelative(BlockFace.WEST);
-		
+		Block b = findRoutingBlock(event.getBlock());
 		if (b == null)
+			return;
+		
+		RoutingBlock rb = plugin.blockmanager.getRoutingBlock(b);
+		if (rb == null)
 			return;
 		
 		plugin.debug("Redstone changed!");
@@ -67,7 +62,7 @@ public class MinecartRoutingBlockListener extends BlockListener {
 		
 		double closest = Double.MAX_VALUE;
     	Minecart closestCart = null;
-    	for (Entity le : event.getBlock().getWorld().getEntities())
+    	for (Entity le : b.getChunk().getEntities())
     	{
     		if (le instanceof Minecart)
     		{
@@ -79,30 +74,33 @@ public class MinecartRoutingBlockListener extends BlockListener {
     			}
     		}
     	}
-		if (closestCart != null && closest < 0.4)
-		{	
-			plugin.debug("Vehicle found! {0}", closest);
-			plugin.settingsManager.passedBlocks.remove(closestCart);
-			// Boost if enabled
-	    	if ( plugin.util.isEnabled(RoutingBlocks.BOOSTER) && (plugin.util.getType(b) == RoutingBlocks.BOOSTER) )
-	    		plugin.blockmanager.booster(b, closestCart, true);
-	    	
-	    	//Brake if enabled
-	    	if ( plugin.util.isEnabled(RoutingBlocks.BRAKE) && (plugin.util.getType(b) == RoutingBlocks.BRAKE) )
-	    		plugin.blockmanager.brake(b, closestCart, true);
-	    		
-	    	//Catch if enabled
-	    	if ( plugin.util.isEnabled(RoutingBlocks.CATCHER) && (plugin.util.getType(b) == RoutingBlocks.CATCHER) )
-	    		plugin.blockmanager.catcher(b, closestCart, true);
-	    	
-	    	//Launch if enabled
-	    	if ( plugin.util.isEnabled(RoutingBlocks.LAUNCHER) && (plugin.util.getType(b) == RoutingBlocks.LAUNCHER) )
-	    		plugin.blockmanager.launcher(b, closestCart, true);
-	    	
-	    	//Switch if enabled
-	    	if ( plugin.util.isEnabled(RoutingBlocks.SWITCH) && (plugin.util.getType(b) == RoutingBlocks.SWITCH) )
-	    		plugin.blockmanager.switcher(b, closestCart, true);
+    	
+    	if (closestCart == null || closest > 0.4)
+    		return;
+    	if (!plugin.settingsManager.vehicles.containsKey(closestCart.getEntityId()))
+    		plugin.settingsManager.vehicles.put(closestCart.getEntityId(), new MinecartRoutingMinecart(closestCart));
+    	
+    	MinecartRoutingMinecart cart = plugin.settingsManager.vehicles.get(closestCart.getEntityId());
+    	plugin.debug("Vehicle found! {0}", closest);
+		
+    	cart.lastOnBlock = null;
+
+		DoActionRunnable run = new DoActionRunnable(rb, b, cart);
+		Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, run, 5);
+	}
+	
+	private Block findRoutingBlock(Block start)
+	{
+		BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+		for (BlockFace dir : directions)
+		{
+			Block b = start.getRelative(dir);
+			if (plugin.util.isRail(b))
+				b = b.getRelative(BlockFace.DOWN);
+			if (plugin.settingsManager.isRoutingBlock(b) && plugin.blockmanager.exists(b))
+				return b;
 		}
+		return null;
 	}
 	
 }
