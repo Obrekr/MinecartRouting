@@ -2,47 +2,32 @@ debug: false
 max-speed: 12
 tool-item: 271
 sign-radius: 3
-booster:
-    enable: true
-    block: 41
-    needredstone: false
-    speed: 100
-    relative: false
-    brakewhenunpowerd:
-        enable: false
-        speed: 25
-        relative: true
-    
-brake:
-    enable: true
-    block: 88
-    needredstone: false
-    speed: 50  
-    relative: true
-    boostwhenunpowerd:
-        enable: false
-        speed: 100
-        relative: false
-
-catcher:
-    enable: false
-    block: 45
-    needredstone: false
-    launchwhenunpowered:
-        enable: false
-        speed: 100
-        relative: false
-
-launcher:
-    enable: true
-    block: 49
-    needredstone: true
-    speed: 100
-    relative: false
-    catchwhenunpowered:
-        enable: true
-
-switch:
-    enable: true
-    block: 42
-    needredstone: false
+slow-when-empty: false
+routingblocks:
+- title: Booster
+  block: 41
+  acceleration:
+  - ignoreredstone: false
+  - redstone: true
+  - speed: 250
+  - relative: false
+  acceleration:
+  - ignoreredstone: false
+  - redstone: false
+  - speed: 10
+  - relative: false
+- title: Station
+  block: 49
+  launcher:
+  - ignoreredstone: false
+  - redstone: true
+  - speed: 10
+  - relative: false
+  catcher:
+  - ignoreredstone: false
+  - redstone: false
+- title: Switch
+  block: 42
+  switch:
+  - ignoreredstone: true
+  - redstone: true

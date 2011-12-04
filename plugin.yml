@@ -1,6 +1,6 @@
 name: MinecartRouting
 main: MinecartRouting.MinecartRouting
-version: 0.2.0
+version: 0.3.0
 permissions:
     minecartrouting.create.*:
         description: Allows player to create/modify all kind of Routingblocks
@@ -11,8 +11,7 @@ permissions:
         description: Allows player to create/modify own Routingblocks
         default: op
         children:
-            minecartrouting.create.booster.own: true
-            minecartrouting.create.brake.own: true
+            minecartrouting.create.acceleration.own: true
             minecartrouting.create.launcher.own: true
             minecartrouting.create.catcher.own: true
             minecartrouting.create.switch.own: true
@@ -20,8 +19,7 @@ permissions:
         description: Allows player to modify others Routingblocks
         default: op
         children:
-            minecartrouting.create.booster.other: true
-            minecartrouting.create.brake.other: true
+            minecartrouting.create.acceleration.other: true
             minecartrouting.create.launcher.other: true
             minecartrouting.create.catcher.other: true
             minecartrouting.create.switch.other: true
@@ -35,8 +33,7 @@ permissions:
         description: Allows player to break own Routingblocks
         default: op
         children:
-            minecartrouting.break.booster.own: true
-            minecartrouting.break.brake.own: true
+            minecartrouting.break.acceleration.own: true
             minecartrouting.break.launcher.own: true
             minecartrouting.break.catcher.own: true
             minecartrouting.break.switch.own: true
@@ -44,8 +41,7 @@ permissions:
         description: Allows player to break others Routingblocks
         default: op
         children:
-            minecartrouting.break.booster.other: true
-            minecartrouting.break.brake.other: true
+            minecartrouting.break.acceleration.other: true
             minecartrouting.break.launcher.other: true
             minecartrouting.break.catcher.other: true
             minecartrouting.break.switch.other: true
@@ -59,8 +55,7 @@ permissions:
         description: Allows player to benefit from own Routingblocks
         default: true
         children:
-            minecartrouting.benefit.booster.own: true
-            minecartrouting.benefit.brake.own: true
+            minecartrouting.benefit.acceleration.own: true
             minecartrouting.benefit.launcher.own: true
             minecartrouting.benefit.catcher.own: true
             minecartrouting.benefit.switch.own: true
@@ -68,76 +63,63 @@ permissions:
         description: Allows player to benefit from others Routingblocks
         default: true
         children:
-            minecartrouting.benefit.booster.other: true
-            minecartrouting.benefit.brake.other: true
+            minecartrouting.benefit.acceleration.other: true
             minecartrouting.benefit.launcher.other: true
             minecartrouting.benefit.catcher.other: true
             minecartrouting.benefit.switch.other: true
     
-    minecartrouting.create.booster.own:
-        description: Allows player to create/modify own Boosters
-    minecartrouting.create.brake.own:
-        description: Allows player to create/modify own Brakes
+    minecartrouting.create.acceleration.own:
+        description: Allows player to create/modify own blocks with acceleration flag
     minecartrouting.create.launcher.own:
-        description: Allows player to create/modify own Launchers
+        description: Allows player to create/modify own blocks with launcher flag
     minecartrouting.create.catcher.own:
-        description: Allows player to create/modify own Catchers
+        description: Allows player to create/modify own blocks with catcher flag
     minecartrouting.create.switch.own:
-        description: Allows player to create/modify own Switchs
-
-    minecartrouting.create.booster.other:
-        description: Allows player to modify others Boosters
-    minecartrouting.create.brake.other:
-        description: Allows player to modify others Brakes
+        description: Allows player to create/modify own blocks with switch flag
+        
+    minecartrouting.create.acceleration.other:
+        description: Allows player to modify others blocks with acceleration flag
     minecartrouting.create.launcher.other:
-        description: Allows player to modify others Launchers
+        description: Allows player to modify others blocks with launcher flag
     minecartrouting.create.catcher.other:
-        description: Allows player to modify others Catchers
+        description: Allows player to modify others blocks with catcher flag
     minecartrouting.create.switch.other:
-        description: Allows player to modify others Switchs
+        description: Allows player to modify others blocks with switch flag
     
 
-    minecartrouting.break.booster.own:
-        description: Allows player to break own Boosters
-    minecartrouting.break.brake.own:
-        description: Allows player to break own Brakes
+    minecartrouting.break.acceleration.own:
+        description: Allows player to break own blocks with acceleration flag
     minecartrouting.break.launcher.own:
-        description: Allows player to break own Launchers
+        description: Allows player to break own blocks with launcher flag
     minecartrouting.break.catcher.own:
-        description: Allows player to break own Catchers
+        description: Allows player to break own blocks with catcher flag
     minecartrouting.break.switch.own:
-        description: Allows player to break own Switchs
+        description: Allows player to break own blocks with switch flag
         
-    minecartrouting.break.booster.other:
-        description: Allows player to break others Boosters
-    minecartrouting.break.brake.other:
-        description: Allows player to break others Brakes
+    minecartrouting.break.acceleration.other:
+        description: Allows player to break others blocks with acceleration flag
     minecartrouting.break.launcher.other:
-        description: Allows player to break others Launchers
+        description: Allows player to break others blocks with launcher flag
     minecartrouting.break.catcher.other:
-        description: Allows player to break others Catchers
+        description: Allows player to break others blocks with catcher flag
     minecartrouting.break.switch.other:
-        description: Allows player to break others Switchs
+        description: Allows player to break others blocks with switch flag
         
     
-    minecartrouting.benefit.booster.own:
-        description: Allows player to use own Boosters
-    minecartrouting.benefit.brake.own:
-        description: Allows player to use own Boosters
+    minecartrouting.benefit.acceleration.own:
+        description: Allows player to use own blocks with acceleration flag
     minecartrouting.benefit.launcher.own:
-        description: Allows player to use own Boosters
+        description: Allows player to use own blocks with launcher flag
     minecartrouting.benefit.catcher.own:
-        description: Allows player to use own Boosters
+        description: Allows player to use own blocks with catcher flag
     minecartrouting.benefit.switch.own:
-        description: Allows player to use own Boosters
+        description: Allows player to use own blocks with switch flag
         
-    minecartrouting.benefit.booster.other:
-        description: Allows player to use others Boosters
-    minecartrouting.benefit.brake.other:
-        description: Allows player to use others Boosters
+    minecartrouting.benefit.acceleration.other:
+        description: Allows player to use others blocks with acceleration flag
     minecartrouting.benefit.launcher.other:
-        description: Allows player to use others Boosters
+        description: Allows player to use others blocks with launcher flag
     minecartrouting.benefit.catcher.other:
-        description: Allows player to use others Boosters
+        description: Allows player to use others blocks with catcher flag
     minecartrouting.benefit.switch.other:
-        description: Allows player to use others Boosters
+        description: Allows player to use others blocks with switch flag

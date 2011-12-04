@@ -1,0 +1,22 @@
+0.3.0:
+  - [F] permissions when updating only rails
+  - [F] graph of railsystem not updating properly
+  - [F] following ascending tracks to next routingblock
+  - [-] permission-node for booster and brake
+  - [+] permission-node ".acceleration." for booster and brake
+  - [-] old hardcoded routingblocks
+  - [+] new system for configuring routingblocks by giving them flags, which are connected to specific actions
+  - [+] destination is added to next own minecart
+  - [+] autorouting per minecart
+  - [+] redstone connectivity changed: powering block or rail above is accepted
+  - [+] made all names, options, directions case insensitiv
+  - [+] enable/disable slowing minecarts in config when they are empty
+
+0.2.0:
+  - [F] "this name already exists" bug
+  - [F] bug when displaying informations of a routingblock
+  - [+] toolitem-klick on rails with routingblock under acts like a toolitemklick on the routingblock itself
+
+0.1.0:
+  - first release
+  
