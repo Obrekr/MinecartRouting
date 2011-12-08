@@ -1,22 +1,29 @@
 package MinecartRouting;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import MinecartRouting.RoutingBlockType.RoutingBlockActionTimes;
+import MinecartRouting.Flags.ActionTimes;
 
 public class MinecartRoutingMinecart {
 	
-	public Minecart cart;
-	public Player owner;
-	public Route route;
-	public Location lastPreBlock;
-	public Location lastOnBlock;
-	public Block catchedBlock;
+	private static MinecartRouting plugin = (MinecartRouting) Bukkit.getPluginManager().getPlugin("MinecartRouting");
+	
+	private Minecart cart;
+	private Player owner;
+	private Route route;
+	private Location lastPreBlock;
+	private BlockFace lastPreDirection;
+	private Location lastOnBlock;
+	private BlockFace lastOnDirection;;
+	private Location catchedBlock;
 	
 	public MinecartRoutingMinecart (Minecart minecart){
 		cart = minecart;
@@ -52,39 +59,98 @@ public class MinecartRoutingMinecart {
 		return false;
 	}
 	
+	public Route getRoute()
+	{
+		return route;
+	}
+	
+	public  Player getOwner()
+	{
+		return owner;
+	}
+	
+	public Vector getVelocity()
+	{
+		return cart.getVelocity();
+	}
+	
+	public Entity getPassenger()
+	{
+		return cart.getPassenger();
+	}
+	
 	public void removeRoute()
 	{
 		route = null;
 	}
 	
-	public boolean hasPositionChanged(Block b, RoutingBlockActionTimes time)
+	public int getId()
+	{
+		return cart.getEntityId();
+	}
+	
+	public Minecart getCart()
+	{
+		return cart;
+	}
+	
+	public boolean hasPositionChanged(Block b, ActionTimes time)
 	{
 		Location loc = null;
+		BlockFace dir = null;
 		switch (time)
 		{
 		case ONBLOCK:
 			loc =  lastOnBlock;
+			dir = lastOnDirection;
 			break;
 		case PREBLOCK:
 			loc = lastPreBlock;
+			dir = lastPreDirection;
+			break;
 		}
-		if (loc == null)
+		if (loc == null || dir == null)
 			return true;
 		Location newloc = b.getLocation();
-		if (!(newloc.getWorld().getUID() == loc.getWorld().getUID() && newloc.getBlockX() == loc.getBlockX() && newloc.getBlockY() == loc.getBlockY() && newloc.getBlockZ() == loc.getBlockZ()))
+		BlockFace incdir = plugin.util.velocityToDirection(cart.getVelocity().normalize());
+		if (!incdir.equals(dir)  || !newloc.equals(loc))
 			return true;
 		return false;
 	}
 	
-	public void setLastBlock(Block b, RoutingBlockActionTimes time)
+	public void setDestination(Integer destid)
+	{
+		route =  new Route(destid);
+	}
+	
+	public void setLastBlock(RoutingBlock routingBlock, ActionTimes time)
+	{
+		BlockFace incdir = plugin.util.velocityToDirection(cart.getVelocity().normalize());
+		switch (time)
+		{
+		case ONBLOCK:
+			lastOnBlock =  routingBlock.getLocation();
+			lastOnDirection = incdir;
+			break;
+		case PREBLOCK:
+			lastPreBlock = routingBlock.getLocation();
+			lastPreDirection = incdir;
+			break;
+		}
+	}
+	
+	public void unsetLastBlock(ActionTimes time)
 	{
 		switch (time)
 		{
 		case ONBLOCK:
-			lastOnBlock =  b.getLocation();
+			lastOnBlock =  null;
+			lastOnDirection = null;
 			break;
 		case PREBLOCK:
-			lastPreBlock = b.getLocation();
+			lastPreBlock = null;
+			lastPreDirection = null;
+			break;
 		}
 	}
 	
@@ -110,16 +176,21 @@ public class MinecartRoutingMinecart {
 		return false;
 	}
 
-	public void catchToBlock(Block b)
+	public boolean isEmpty()
 	{
-		catchedBlock = b;
+		return cart.isEmpty();
+	}
+	
+	public void catchToBlock(RoutingBlock b)
+	{
+		catchedBlock = b.getLocation();
 		recatch();
 	}
 	
 	public void recatch()
 	{
 		cart.setVelocity(new Vector(0,0,0));
-		Location loc = catchedBlock.getLocation();
+		Location loc = catchedBlock.clone();
 		loc.setX(loc.getX() + 0.5);
 		loc.setY(loc.getY() + 1.5);
 		loc.setZ(loc.getZ() + 0.5);

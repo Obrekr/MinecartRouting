@@ -1,11 +1,9 @@
 package MinecartRouting;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
@@ -18,15 +16,74 @@ import org.bukkit.entity.StorageMinecart;
 
 public class BlockManager {
 	
-	private MinecartRouting plugin;
+	private static MinecartRouting plugin;
 	
 	public BlockManager(MinecartRouting instance)
 	{
 		plugin = instance;
 	}
 	
-	public boolean isRightPowered(Block b, Boolean ignoreredstone, Boolean redstone)
+	public Boolean hasCreatePermission(RoutingBlockType block, Player p)
 	{
+		Boolean result = false;
+		List<String> names = block.getFlagStringList();
+		for (String name : names)
+		{
+			if (p.hasPermission("minecartrouting.create."+name+".own"))
+				result = true;
+			else
+				return false;
+		}
+		return result;
+	}
+	
+	public Boolean hasUpdatePermission(RoutingBlock block, Player p)
+	{
+		Boolean result = false;
+		List<String> names = block.getFlagStringList();
+		for (String name : names)
+		{
+			if (block.isOwner(p))
+			{
+				if (p.hasPermission("minecartrouting.create."+name+".own"))
+					result = true;
+				else
+					return false;
+			}else{
+				if (p.hasPermission("minecartrouting.create."+name+".other"))
+					result = true;
+				else
+					return false;
+			}
+		}
+		return result;
+	}
+	
+	public Boolean hasBreakPermission(RoutingBlock block, Player p)
+	{
+		Boolean result = false;
+		List<String> names = block.getFlagStringList();
+		for (String name : names)
+		{
+			if (block.isOwner(p))
+			{
+				if (p.hasPermission("minecartrouting.break."+name+".own"))
+					result = true;
+				else
+					return false;
+			}else{
+				if (p.hasPermission("minecartrouting.break."+name+".other"))
+					result = true;
+				else
+					return false;
+			}
+		}
+		return result;
+	}
+	
+	public boolean isRightPowered(RoutingBlock rb, Boolean ignoreredstone, Boolean redstone)
+	{
+		Block b = rb.getLocation().getBlock();
 		if (ignoreredstone)
 			return true;
 		if (redstone == false && !(b.isBlockIndirectlyPowered() || b.getRelative(BlockFace.UP).isBlockIndirectlyPowered()))
@@ -35,60 +92,7 @@ public class BlockManager {
 			return true;
 		return false;
 	}
-	
-	public RoutingBlock getRoutingBlock(Block b)
-	{
-		return plugin.settingsManager.routingblocks.get(b.getTypeId());
-	}
-	
-	public Boolean hasSignConfig(Block b)
-	{
-		RoutingBlock rb = getRoutingBlock(b);
-		if (rb == null)
-			return false;
-		return rb.hasSignConfig();
-	}
-	
-	public Boolean hasPermission(RoutingBlock block, Player p, boolean create, boolean own)
-	{
-		List<String> names = block.getTypesStringList();
-		if (names == null)
-			return false;
-		Boolean result = false;
-		for (String name : names)
-		{
-			if (create)
-			{
-				if (own)
-				{
-					if (p.hasPermission("minecartrouting.create."+name+".own"))
-						result = true;
-					else
-						return false;
-				}else{
-					if (p.hasPermission("minecartrouting.create."+name+".other"))
-						result = true;
-					else
-						return false;
-				}
-			}else{
-				if (own)
-				{
-					if (p.hasPermission("minecartrouting.break."+name+".own"))
-						result = true;
-					else
-						return false;
-				}else{
-					if (p.hasPermission("minecartrouting.break."+name+".other"))
-						result = true;
-					else
-						return false;
-				}
-			}
-		}
-		return result;
-	}
-	
+
 	public void setRail(Block rail, BlockFace one, BlockFace two)
 	{
 		byte raildata = rail.getData();
@@ -107,154 +111,105 @@ public class BlockManager {
 		rail.setData(raildata);
 	}
 	
-	public BlockFace getDirection(Block b, MinecartRoutingMinecart v)
+	public BlockFace getDirection(RoutingBlock b, MinecartRoutingMinecart v)
 	{
-		return getDirection(b, v, false, false);
-	}
-	
-	public BlockFace getDirection(Block b, MinecartRoutingMinecart v, Boolean launching, Boolean catching)
-	{
-		Player p = v.owner;
-		if (v.hasRoute() && plugin.util.hasRecheadDestination(b, v))
-		{	
-			v.removeRoute();
-			p.sendRawMessage(ChatColor.AQUA + "Your cart #"+v.cart.getEntityId()+" has reached its destination!");
-		}
-		
-		// get Conditions
-		String query = "SELECT conditions FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		ResultSet result = plugin.database.select(query);
-		String dbresult = null;
-		try {
-			result.next();
-			dbresult = result.getString("conditions");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		String[] lines = dbresult.split(";");
-		
-		BlockFace[] from = new BlockFace[lines.length];
-		String[] conditions = new String[lines.length];
-		BlockFace[] to = new BlockFace[lines.length];
-		
-		for (int i = 0; i < lines.length; i++)
-		{
-			String fromdirection = lines[i].split(":")[0];
-			String todirection = lines[i].split(":")[2];
-			String options = lines[i].split(":")[1];
-			
-			from[i] = plugin.util.StringToDirection(fromdirection.toLowerCase());
-			to[i] = plugin.util.StringToDirection(todirection.toLowerCase());
-			conditions[i] = options.toLowerCase();
-		}
-
-		BlockFace fromdirection = plugin.util.velocityToDirection(v.cart.getVelocity().normalize());
+		Player p = v.getOwner();
+		BlockFace fromdirection = plugin.util.velocityToDirection(v.getVelocity().normalize());
 		plugin.debug("Origin: {0}", fromdirection);
 		
-		BlockFace destination = BlockFace.SELF;
+		BlockFace destination = null;
 		
-		for (int d = 0; d < from.length; d++)
+		if (!b.getFrom_options().containsKey(fromdirection))
+			return null;
+		for (String option : b.getFrom_options().get(fromdirection))
 		{
-			if (from[d] == fromdirection || launching)
+			if (option.equals("auto") && v.hasRoute())
 			{
-				if ( (v.cart.getPassenger() instanceof Player) && (conditions[d].equals("#"+((Player) v.cart.getPassenger()).getDisplayName())) )
-				{
-					destination = to[d];
+				plugin.debug("Starting AutoRouting...");
+				destination = plugin.automanager.getDirection(b, p, v);
+				if (destination != null)
 					break;
-				}
-				
-				if ( v.cart.getPassenger() instanceof Player && conditions[d].equals("player") )
-				{
-					destination = to[d];
-					break;
-				}
-					
-				if ( (v.cart.getPassenger() instanceof Animals || v.cart.getPassenger() instanceof Monster) && conditions[d].equals("mob") )
-				{
-					destination = to[d];
-					break;
-				}
-					
-				if ( v.cart.isEmpty()  && conditions[d].equals("empty"))
-				{
-					destination = to[d];
-					break;
-				}
-					
-				if (v instanceof StorageMinecart  && conditions[d].equals("storage"))
-				{
-					destination = to[d];
-					break;
-				}
-					
-				if (v instanceof PoweredMinecart  && conditions[d].equals("powered"))
-				{
-					destination = to[d];
-					break;
-				}
-					
-				if (conditions[d].equals("default"))
-				{
-					destination = to[d];
-					break;
-				}
-				
-				if (conditions[d].equals("auto") && v.hasRoute())
-				{
-					plugin.debug("Starting AutoRouting...");
-					destination = plugin.automanager.getDirection(b, p, v);
-					if (!(destination == BlockFace.SELF))
-						break;
-				}
 			}
+			
+			if (optionMatches(option, b, v))
+				destination = b.getToDirection(fromdirection, option);
 		}
 		
-		if (catching && destination != BlockFace.SELF)
-			destination = BlockFace.UP;
-		
-		plugin.debug("Destination: {0}", destination);
-		
+		if (destination != null)
+			plugin.debug("Destination: {0}", destination);
+		else
+			plugin.debug("No destination!");
 		return destination;	
 	}
 	
-
-	
-
-	
-	public boolean exists(Block b)
+	public BlockFace getLaunchingDirection(RoutingBlock b, MinecartRoutingMinecart v)
 	{
-		String query = "SELECT id FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		ResultSet result = plugin.database.select(query);
-		try {
-			if (result.next())
-				return true;
-		} catch (SQLException e) {
-			e.printStackTrace();
+		Player p = v.getOwner();
+		BlockFace destination = null;
+		BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+		alldirections:
+		for (BlockFace direction : directions)
+		{
+			if (b.getFrom_options().containsKey(direction))
+			{
+				for (String option : b.getFrom_options().get(direction))
+				{
+					if (option.equals("auto") && v.hasRoute())
+					{
+						plugin.debug("Starting AutoRouting...");
+						destination = plugin.automanager.getDirection(b, p, v);
+						if (destination != null)	
+							break alldirections;
+					}
+					
+					if (optionMatches(option, b, v))
+						destination = b.getToDirection(direction, option);
+				}
+			}
 		}
+		return destination;
+	}
+	
+	private boolean optionMatches(String option, RoutingBlock b, MinecartRoutingMinecart v)
+	{
+		if ( v.getPassenger() instanceof Player && option.equals("#"+((Player) v.getPassenger()).getDisplayName()) )
+			return true;
+		
+		if ( option.equals("player") && v.getPassenger() instanceof Player )
+			return true;
+			
+		if ( option.equals("mob") && (v.getPassenger() instanceof Animals || v.getPassenger() instanceof Monster) )
+			return true;
+			
+		if ( option.equals("empty") && v.isEmpty() )
+			return true;
+			
+		if ( option.equals("storage") && v.getCart() instanceof StorageMinecart)
+			return true;
+			
+		if ( option.equals("powered") && v.getCart() instanceof PoweredMinecart)
+			return true;
+			
+		if ( option.equals("default") )
+			return true;
 		return false;
 	}
 	
 	public boolean add(Block b, Player p)
 	{
-		RoutingBlock rb = getRoutingBlock(b);
-		if (!hasPermission(rb, p, true, true))
+		RoutingBlockType type = plugin.settingsmanager.getRoutingBlockType(b.getTypeId());
+		if (!hasCreatePermission(type, p))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to create this RoutingBlock");
 			return false;
 		}
-
-		String owner = p.getName();
 		String[] signs = readSigns(b);
+		
 		String conditions = signs[0].toLowerCase();
 		String name = signs[1].toLowerCase();
-		int x = b.getX();
-		int y = b.getY();
-		int z = b.getZ();
-		String world = b.getWorld().getName();
-		String type = rb.getTypeString();
+		Location location = b.getLocation();
 		
-		if (rb.hasSignConfig() && plugin.util.nameExists(name))
+		if (type.hasSignConfig() && plugin.settingsmanager.isRoutingBlock(name))
 		{	
 			p.sendRawMessage(ChatColor.AQUA + "Name already exists!");
 			plugin.debug("name already exists: {0}", name);
@@ -267,72 +222,56 @@ public class BlockManager {
 			return false;
 		}
 		
-		String query = "INSERT INTO `mr_blocks` ('x', 'y', 'z','world', 'type', 'owner', 'conditions', 'name') VALUES("+x+","+y+","+z+",'"+world+"','"+type+"','"+owner+"','"+conditions+"', '"+name+"');";
-		plugin.database.insert(query);
+		RoutingBlock rb = new RoutingBlock(location, p, conditions, name);
+		rb.save();
+		rb.reload();
+		plugin.settingsmanager.putRoutingBlock(rb);
+		
+		plugin.debug("Block added");
 		
 		if (rb.hasSignConfig())
-			plugin.automanager.updateBlockInAllDirections(b);
+			plugin.automanager.update(rb);
 		
 		plugin.updateGraph();
 		
 		p.sendRawMessage(ChatColor.AQUA + "Block added!");
-		plugin.debug("Block added: {0}", b.getLocation().toString());
+		plugin.debug("Block added: {0}", rb.getId());
 		return true;
 	}
 	
-	public boolean remove(Block b, Player p)
+	public boolean remove(RoutingBlock b, Player p)
 	{
-		RoutingBlock rb = getRoutingBlock(b);
-		if (!( (hasPermission(rb, p, false, true) && plugin.util.isOwner(b, p)) || hasPermission(rb, p, false, false) ))
+		if (!hasBreakPermission(b, p))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to delete this RoutingBlock");
 			return false;
 		}
 		
-		List<Integer> toupdate = new ArrayList<Integer>();
-		if (rb.hasSignConfig())
-		{
-			int blockid = plugin.util.getIdByBlock(b);
-			String query = "SELECT id FROM mr_blocks WHERE north="+blockid+" OR west="+blockid+" OR east="+blockid+" OR south="+blockid+";";
-			ResultSet result = plugin.database.select(query);
-			try {
-				while(result.next())
-				{
-					toupdate.add(result.getInt("id"));
-				}
-				plugin.debug("Blocks needing update: {0}", toupdate.toString());
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
+		if (b.hasSignConfig())
+			plugin.automanager.remove(b);
 		
-		String query = "DELETE FROM `mr_blocks` WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		plugin.database.delete(query);
-		
-		if (rb.hasSignConfig())
-			plugin.automanager.remove(toupdate);
-		
+		b.delete();
+		plugin.settingsmanager.removeRoutingBlock(b);
 		plugin.updateGraph();
 		
 		p.sendRawMessage(ChatColor.AQUA + "Block removed!");
-		plugin.debug("Block removed: {0}", b.getLocation().toString());
+		plugin.debug("Block removed: {0}", b.getId());
 		return true;
 	}
 	
-	public boolean update(Block b, Player p)
+	public boolean update(RoutingBlock b, Player p)
 	{
-		RoutingBlock rb = getRoutingBlock(b);
-		if (!( (hasPermission(rb, p, true, true) && plugin.util.isOwner(b, p)) ||hasPermission(rb, p, true, false) ))
+		if (!hasUpdatePermission(b, p))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to modify this RoutingBlock");
 			return false;
 		}
 		
-		String[] signs = readSigns(b);
+		String[] signs = readSigns(b.getLocation().getBlock());
 		String conditions = signs[0].toLowerCase();
 		String name = signs[1].toLowerCase();
 		
-		if (!(!plugin.util.nameExists(name) || plugin.util.getIdByName(name) == plugin.util.getIdByBlock(b)))
+		if (!(!plugin.settingsmanager.isRoutingBlock(name) || plugin.settingsmanager.getRoutingBlock(name).getId() == b.getId()))
 		{	
 			p.sendRawMessage(ChatColor.AQUA + "Name already exists!");
 			plugin.debug("name already exists: {0}", name);
@@ -340,35 +279,37 @@ public class BlockManager {
 		}
 		if (name.matches("#[a-zA-Z0-9]*"))
 		{
-			p.sendRawMessage(ChatColor.AQUA + "Invalid name!");
+			p.sendRawMessage(ChatColor.AQUA + "Invalid name. Name starts with #!");
 			plugin.debug("name shall not beginn with #: {0}", name);
 			return false;
 		}
 		
-		String query = "UPDATE `mr_blocks` SET conditions='"+conditions+"', name='"+name+"' WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		plugin.database.update(query);
+		b.setName(name);
+		b.setConditions(conditions);
+		b.save();
+		b.reload();
 		
-		if (rb.hasSignConfig())
-			plugin.automanager.updateBlockInAllDirections(b);
+		if (b.hasSignConfig())
+			plugin.automanager.update(b);
 		
 		plugin.updateGraph();
 		
 		p.sendRawMessage(ChatColor.AQUA + "Block updated!");
-		plugin.debug("Block updated: {0}", b.getLocation().toString());
+		plugin.debug("Block updated: {0}", b.getId());
 		return true;
 	}
 	
-	public boolean updateRails(Block b, Player p)
+	public boolean updateRails(RoutingBlock b, Player p)
 	{
-		RoutingBlock rb = getRoutingBlock(b);
-		if (!( (hasPermission(rb, p, true, true) && plugin.util.isOwner(b, p)) || hasPermission(rb, p, true, false) ))
+		if (!hasUpdatePermission(b, p))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to modify this RoutingBlock");
 			return false;
 		}
 		
 		plugin.debug("Updating only Rails...");
-		plugin.automanager.updateBlockInAllDirections(b);
+
+		plugin.automanager.update(b);
 		plugin.updateGraph();
 		
 		p.sendRawMessage(ChatColor.AQUA + "Rails updated!");
@@ -380,7 +321,7 @@ public class BlockManager {
 		String[] retrn = {"", ""};
 
 		String[] fromdirections = {"north", "east", "south", "west"};
-		int signradius = plugin.settingsManager.getConfig().getInt("sign-radius");
+		int signradius = plugin.settingsmanager.signradius;
 		
 		for (int d = 0; d<4; d++)	// all directions
 		{
@@ -427,10 +368,10 @@ public class BlockManager {
 							{
 								plugin.debug("RegExp match!");
 								
-								String fromdir = fromdirections[d];
+								String fromdir = fromdirections[d].toLowerCase();
 								String[] string = lines[i].split(":");
-								String condition = string[0].substring(1);
-								String todir = string[1].substring(0, string[1].length() - 1);
+								String condition = string[0].substring(1).toLowerCase();
+								String todir = string[1].substring(0, string[1].length() - 1).toLowerCase();
 								
 								todir = plugin.util.getToDirection(fromdir, todir);
 								if (!todir.equals(""))

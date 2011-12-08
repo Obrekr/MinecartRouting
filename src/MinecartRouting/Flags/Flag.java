@@ -1,19 +1,19 @@
-package MinecartRouting.RoutingBlockType;
+package MinecartRouting.Flags;
 
 import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
 
 import MinecartRouting.MinecartRouting;
 import MinecartRouting.MinecartRoutingMinecart;
+import MinecartRouting.RoutingBlock;
 
-public interface RoutingBlockType {
+public interface Flag {
 	
 	MinecartRouting plugin = (MinecartRouting) Bukkit.getServer().getPluginManager().getPlugin("MinecartRouting");
 	
-	void doAction(Block b, MinecartRoutingMinecart cart);
+	void doAction(RoutingBlock routingBlock, MinecartRoutingMinecart cart);
 
-	RoutingBlockTypes getBlockType();
-	RoutingBlockActionTimes getActionTime();
+	Flags getBlockType();
+	ActionTimes getActionTime();
 	boolean hasSignConfig();
 	public boolean isValid();
 	public String toString();

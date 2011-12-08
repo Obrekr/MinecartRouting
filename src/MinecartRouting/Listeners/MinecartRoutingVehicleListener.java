@@ -11,7 +11,7 @@ import org.bukkit.event.vehicle.VehicleMoveEvent;
 import MinecartRouting.MinecartRouting;
 import MinecartRouting.MinecartRoutingMinecart;
 import MinecartRouting.RoutingBlock;
-import MinecartRouting.RoutingBlockType.RoutingBlockActionTimes;
+import MinecartRouting.Flags.ActionTimes;
 
 public class MinecartRoutingVehicleListener extends VehicleListener{
     
@@ -30,11 +30,17 @@ public class MinecartRoutingVehicleListener extends VehicleListener{
     	Block fromBlock = event.getFrom().getBlock().getRelative(0, -1, 0);
     	Block toBlock = event.getTo().getBlock().getRelative(0, -1, 0);
     	
-    	if (plugin.settingsManager.isRoutingBlock(fromBlock) && plugin.blockmanager.exists(fromBlock))	
-    		routingBlockFound(fromBlock, event.getVehicle(), RoutingBlockActionTimes.ONBLOCK);
+    	if (plugin.settingsmanager.isRoutingBlock(fromBlock.getLocation()))	
+    	{	
+    		RoutingBlock b = plugin.settingsmanager.getRoutingBlock(fromBlock.getLocation());
+    		routingBlockFound(b, event.getVehicle(), ActionTimes.ONBLOCK);
+    	}
    
-    	if (plugin.settingsManager.isRoutingBlock(toBlock) && plugin.blockmanager.exists(toBlock))
-    		routingBlockFound(toBlock, event.getVehicle(), RoutingBlockActionTimes.PREBLOCK);
+    	if (plugin.settingsmanager.isRoutingBlock(toBlock.getLocation()))
+    	{	
+    		RoutingBlock b = plugin.settingsmanager.getRoutingBlock(toBlock.getLocation());
+    		routingBlockFound(b, event.getVehicle(), ActionTimes.PREBLOCK);
+    	}
   	
     }
     
@@ -44,11 +50,11 @@ public class MinecartRoutingVehicleListener extends VehicleListener{
 			return;
 		
     	Minecart v = (Minecart) event.getVehicle();
-    	double speed = (double) plugin.settingsManager.maxspeed / 20.0;
+    	double speed = (double) plugin.settingsmanager.maxspeed / 20.0;
     	v.setMaxSpeed(speed);
-    	v.setSlowWhenEmpty(plugin.settingsManager.slowwhenempty);
+    	v.setSlowWhenEmpty(plugin.settingsmanager.slowwhenempty);
     	addVehicleToSettings(v);
-		plugin.debug("Vehicle created, Owner: {0}", plugin.settingsManager.vehicles.get(v.getEntityId()).owner.getDisplayName());
+		plugin.debug("Vehicle created, Owner: {0}", plugin.settingsmanager.getMinecart(v).getOwner().getDisplayName());
     }
     
     public void onVehicleDestroy(VehicleDestroyEvent event)
@@ -57,16 +63,16 @@ public class MinecartRoutingVehicleListener extends VehicleListener{
 			return;
     	
     	Minecart v = (Minecart) event.getVehicle();
-    	plugin.settingsManager.vehicles.remove(v.getEntityId());
+    	plugin.settingsmanager.removeMinecart(v);
     	
 		plugin.debug("Minecart removed: {0}", v.toString());
     }
 
-    private void routingBlockFound(Block b, Vehicle v, RoutingBlockActionTimes time)
+    private void routingBlockFound(RoutingBlock b, Vehicle v, ActionTimes time)
     {
-    	if (!plugin.settingsManager.vehicles.containsKey(v.getEntityId()))
+    	if (!plugin.settingsmanager.isMinecart(v))
     		addVehicleToSettings((Minecart) v);
-    	MinecartRoutingMinecart cart = plugin.settingsManager.vehicles.get(v.getEntityId());
+    	MinecartRoutingMinecart cart = plugin.settingsmanager.getMinecart(v);
 
 		if (cart.isCatched())
 		{	
@@ -74,18 +80,15 @@ public class MinecartRoutingVehicleListener extends VehicleListener{
 			cart.recatch();
 		}
 		
-		if (!cart.hasPositionChanged(b, time))	
+		if (!cart.hasPositionChanged(b.getBlock(), time))	
 			return;
 		
-		plugin.debug("RoutingBlock found! {0}", b.getLocation().toString());
-		RoutingBlock rb = plugin.blockmanager.getRoutingBlock(b);
-		if (rb == null)
-			return;
-		rb.doActions(b, cart, time);
+		plugin.debug("RoutingBlock found! {0}", b.getId());
+		b.doActions(cart, time);
     }
     
 	private void addVehicleToSettings(Minecart v)
 	{
-		plugin.settingsManager.vehicles.put(v.getEntityId(), new MinecartRoutingMinecart(v));
+		plugin.settingsmanager.putMinecart(new MinecartRoutingMinecart(v));
 	}
 }

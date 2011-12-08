@@ -1,22 +1,22 @@
-package MinecartRouting.RoutingBlockType;
+package MinecartRouting.Flags;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import MinecartRouting.MinecartRoutingMinecart;
+import MinecartRouting.RoutingBlock;
 
-public class Acceleration implements RoutingBlockType{
+public class Acceleration implements Flag{
 
-	RoutingBlockTypes type = RoutingBlockTypes.ACCELERATION;
-	RoutingBlockActionTimes time = RoutingBlockActionTimes.ONBLOCK;
-	Boolean ignoreredstone;
-	Boolean redstone;
-	Integer speedmodifier;
-	Boolean relative;
+	private Flags type = Flags.ACCELERATION;
+	private ActionTimes time = ActionTimes.ONBLOCK;
+	private Boolean ignoreredstone;
+	private Boolean redstone;
+	private Integer speedmodifier;
+	private Boolean relative;
 	
 	public Acceleration(List<LinkedHashMap<String, Object>> options)
 	{
@@ -34,24 +34,10 @@ public class Acceleration implements RoutingBlockType{
 	}	
 
 	@Override
-	public boolean isValid()
+	public void doAction(RoutingBlock b, MinecartRoutingMinecart cart)
 	{
-		if (redstone != null && ignoreredstone != null && speedmodifier != null && relative != null)
-			return true;
-		return false;
-	}
-	
-	@Override
-	public String toString()
-	{
-		return "Acceleration: ignoreredstone: "+ignoreredstone.toString()+" redstone: "+redstone.toString()+" speed: "+speedmodifier.toString()+" relative: "+relative.toString()+";";
-	}
-
-	@Override
-	public void doAction(Block b, MinecartRoutingMinecart cart)
-	{
-		Player p = cart.owner;
-		if (!( (p.hasPermission("minecartrouting.benefit.acceleration.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.acceleration.other")))
+		Player p = cart.getOwner();
+		if (!( (p.hasPermission("minecartrouting.benefit.acceleration.own") && b.isOwner(p)) || p.hasPermission("minecartrouting.benefit.acceleration.other")))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to benefit from speed modifing flags");
 			return;
@@ -65,13 +51,13 @@ public class Acceleration implements RoutingBlockType{
 	}
 
 	@Override
-	public RoutingBlockTypes getBlockType()
+	public Flags getBlockType()
 	{
 		return type;
 	}
 
 	@Override
-	public RoutingBlockActionTimes getActionTime()
+	public ActionTimes getActionTime()
 	{
 		return time;
 	}
@@ -80,6 +66,20 @@ public class Acceleration implements RoutingBlockType{
 	public boolean hasSignConfig()
 	{
 		return false;
+	}
+
+	@Override
+	public boolean isValid()
+	{
+		if (redstone != null && ignoreredstone != null && speedmodifier != null && relative != null)
+			return true;
+		return false;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Acceleration: ignoreredstone: "+ignoreredstone.toString()+" redstone: "+redstone.toString()+" speed: "+speedmodifier.toString()+" relative: "+relative.toString()+";";
 	}
 
 }

@@ -1,24 +1,24 @@
-package MinecartRouting.RoutingBlockType;
+package MinecartRouting.Flags;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import MinecartRouting.MinecartRoutingMinecart;
+import MinecartRouting.RoutingBlock;
 
-public class Launcher implements RoutingBlockType
+public class Launcher implements Flag
 {
-	RoutingBlockTypes type = RoutingBlockTypes.LAUNCHER;
-	RoutingBlockActionTimes time = RoutingBlockActionTimes.ONBLOCK;
-	Boolean ignoreredstone;
-	Boolean redstone;
-	Integer speedmodifier;
-	Boolean relative;
+	private Flags type = Flags.LAUNCHER;
+	private ActionTimes time = ActionTimes.ONBLOCK;
+	private Boolean ignoreredstone;
+	private Boolean redstone;
+	private Integer speedmodifier;
+	private Boolean relative;
 	
 	public Launcher(List<LinkedHashMap<String, Object>> options)
 	{
@@ -35,24 +35,10 @@ public class Launcher implements RoutingBlockType
 		}
 	}	
 	@Override
-	public boolean isValid()
+	public void doAction(RoutingBlock b, MinecartRoutingMinecart cart)
 	{
-		if (redstone != null && ignoreredstone != null && speedmodifier != null && relative != null)
-			return true;
-		return false;
-	}
-
-	@Override
-	public String toString()
-	{
-		return "Launcher: ignoreredstone: "+ignoreredstone.toString()+" redstone: "+redstone.toString()+" speed: "+speedmodifier.toString()+" relative: "+relative.toString()+";";
-	}
-	
-	@Override
-	public void doAction(Block b, MinecartRoutingMinecart cart)
-	{
-		Player p = cart.owner;
-		if (!( (p.hasPermission("minecartrouting.benefit.launcher.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.launcher.other")))
+		Player p = cart.getOwner();
+		if (!( (p.hasPermission("minecartrouting.benefit.launcher.own") && b.isOwner(p)) || p.hasPermission("minecartrouting.benefit.launcher.other")))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to benefit from launcher flags");
 			return;
@@ -62,19 +48,21 @@ public class Launcher implements RoutingBlockType
 			return;
 		
 		plugin.debug("Launching...");
-		BlockFace dir = plugin.blockmanager.getDirection(b, cart, true, false);
+		BlockFace dir = plugin.blockmanager.getLaunchingDirection(b, cart);
+		if (dir == null)
+			return;
 		Vector direction = plugin.util.directionToVector(dir);
 		cart.launch(direction, speedmodifier, relative);
 	}
 	
 	@Override
-	public RoutingBlockTypes getBlockType()
+	public Flags getBlockType()
 	{
 		return type;
 	}
 	
 	@Override
-	public RoutingBlockActionTimes getActionTime()
+	public ActionTimes getActionTime()
 	{
 		return time;
 	}
@@ -82,6 +70,18 @@ public class Launcher implements RoutingBlockType
 	public boolean hasSignConfig()
 	{
 		return true;
+	}
+	@Override
+	public boolean isValid()
+	{
+		if (redstone != null && ignoreredstone != null && speedmodifier != null && relative != null)
+			return true;
+		return false;
+	}
+	@Override
+	public String toString()
+	{
+		return "Launcher: ignoreredstone: "+ignoreredstone.toString()+" redstone: "+redstone.toString()+" speed: "+speedmodifier.toString()+" relative: "+relative.toString()+";";
 	}
 
 }

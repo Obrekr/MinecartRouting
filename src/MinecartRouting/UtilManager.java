@@ -1,11 +1,6 @@
 package MinecartRouting;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
@@ -15,74 +10,11 @@ import org.bukkit.util.Vector;
 
 public class UtilManager {
 	
-	MinecartRouting plugin;
+	private static MinecartRouting plugin;
 	
 	public UtilManager(MinecartRouting instance)
 	{
 		plugin = instance;
-	}
-	
-	public boolean isOwner(Block b, Player p)
-	{
-		String query = "SELECT owner FROM `mr_blocks` WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		ResultSet result = plugin.database.select(query);
-		String owner = null;
-		try {
-			if (result.next())
-				owner = result.getString("owner");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		if (owner.equals(p.getName()))
-		{
-			if (plugin.settingsManager.getConfig().getBoolean("debug"))
-				plugin.log("Owner: {0}", owner);
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public int getIdByName(String name)
-	{
-		String query = "SELECT id FROM mr_blocks WHERE name='"+name+"';";
-		ResultSet result = plugin.database.select(query);
-		int id = -1;
-		try {
-			if (result.next())
-				id = result.getInt("id");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return id;
-	}
-	
-	public int getIdByBlock(Block b)
-	{
-		String query = "SELECT id FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		ResultSet result = plugin.database.select(query);
-		int id = -1;
-		try {
-			if (result.next())
-				id = result.getInt("id");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		return id;
-	}
-
-	public boolean hasRecheadDestination(Block b, MinecartRoutingMinecart v)
-	{
-		int id = getIdByBlock(b);
-		int iddest = v.route.getDestination();
-		
-		plugin.debug("Reaching destination? RoutingBlock: {0}, Destination: {1}", id, iddest);
-		
-		if (id == iddest)
-			return true;
-		return false;
 	}
 	
 	public BlockFace StringToDirection(String direction)
@@ -185,145 +117,24 @@ public class UtilManager {
 		
 		return "";
 	}
-
-	public Block getBlockById(int id) {
-		String query = "SELECT x, y, z, world FROM mr_blocks WHERE id="+id+";";
-		ResultSet result = plugin.database.select(query);
-		try {
-			if (result.next())
-			{
-				int x = result.getInt("x");
-				int y = result.getInt("y");
-				int z = result.getInt("z");
-				World w = plugin.getServer().getWorld(result.getString("world"));
-				Location loc = new Location(w, x, y, z);
-				return loc.getBlock();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		return null;
-	}
 	
-	public String getNameById(int id)
+	public void sendInfo(RoutingBlock b, Player p)
 	{
-		String query = "SELECT name FROM mr_blocks WHERE id="+id+";";
-		ResultSet result = plugin.database.select(query);
-		try {
-			if (result.next())
-			{	String str = result.getString("name");
-				if (str != null)
-					return str;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return "";
-	}
-	
-	public String getNameByBlock(Block b)
-	{
-		if (!plugin.blockmanager.hasSignConfig(b))
-			return "";
-		String query = "SELECT name FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		ResultSet result = plugin.database.select(query);
-		try {
-			if (result.next())
-				if (result.next())
-				{	String str = result.getString("name");
-					if (str != null)
-						return str;
-				}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return "";
-	}
-	
-	public boolean nameExists(String name)
-	{
-		if (name.equals(""))
-			return false;
-		String query = "SELECT id FROM mr_blocks WHERE name='"+name+"';";
-		ResultSet result = plugin.database.select(query);
-		try {
-			if (result.next())
-				return true;	
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-	
-	public void sendInfo(Block b, Player p)
-	{
-		// owner, name(#id), position, type,  nextblocks (distance), conditions
-		RoutingBlock rb = plugin.blockmanager.getRoutingBlock(b);
-		
-		String owner = "";
-		String name = "";
-		int id = -1;
-		int x = b.getX();
-		int y = b.getY();
-		int z = b.getZ();
-		String type = rb.getTypeString();
-		int north = -1;
-		int east = -1;
-		int south = -1;
-		int west = -1;
-		int north_length = -1;
-		int east_length = -1;
-		int south_length = -1;
-		int west_length = -1;
-		String conditions = "";
-		
-		String query = "SELECT * FROM mr_blocks WHERE x='"+b.getX()+"' AND y='"+b.getY()+"' AND z="+b.getZ()+" AND world='"+b.getWorld().getName()+"';";
-		ResultSet result = plugin.database.select(query);
-		try {
-			if (result.next())
-			{
-				id = result.getInt("id");
-				owner = result.getString("owner");
-				if (result.getString("name") != null)
-					name = result.getString("name");
-				if (plugin.util.getBlockById(result.getInt("north")) != null)
-				{	north = result.getInt("north");
-					north_length = result.getInt("north_length");
-				}
-				if (plugin.util.getBlockById(result.getInt("east")) != null)
-				{	east = result.getInt("east");
-					east_length = result.getInt("east_length");
-				}
-				if (plugin.util.getBlockById(result.getInt("south")) != null)
-				{	south = result.getInt("south");
-					south_length = result.getInt("south_length");
-				}
-				if (plugin.util.getBlockById(result.getInt("west")) != null)
-				{	west = result.getInt("west");
-					west_length = result.getInt("west_length");
-				}
-				if (result.getString("conditions") != null)
-					conditions = result.getString("conditions");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 		p.sendRawMessage(ChatColor.AQUA + "---------------------");
-		p.sendRawMessage(ChatColor.GOLD + "Name: "+name+" (#"+id+")");
-		p.sendRawMessage(ChatColor.GOLD + "Owner: "+owner+"");
-		p.sendRawMessage(ChatColor.GOLD + "Position: "+x+" | "+y+" | "+z+"");
-		p.sendRawMessage(ChatColor.GOLD + "Type: "+type+"");
-		if (north != -1)
-			p.sendRawMessage(ChatColor.GOLD + "North: "+getNameById(north)+" (#"+north+")("+north_length+" blocks)");
-		if (east != -1)
-			p.sendRawMessage(ChatColor.GOLD + "East: "+getNameById(east)+" (#"+east+")("+east_length+" blocks)");
-		if (south != -1)	
-			p.sendRawMessage(ChatColor.GOLD + "South: "+getNameById(south)+" (#"+south+")("+south_length+" blocks)");
-		if (west != -1)
-			p.sendRawMessage(ChatColor.GOLD + "West: "+getNameById(west)+" (#"+west+")("+west_length+" blocks)");
-		if (rb.hasSignConfig())
-			p.sendRawMessage(ChatColor.GOLD + "Conditions: "+conditions);
+		p.sendRawMessage(ChatColor.GOLD + "Name: "+b.getName()+" (#"+b.getId()+")");
+		p.sendRawMessage(ChatColor.GOLD + "Owner: "+b.getOwner()+"");
+		p.sendRawMessage(ChatColor.GOLD + "Position: "+b.getLocation().getBlockX()+" | "+b.getLocation().getBlockY()+" | "+b.getLocation().getBlockZ()+"");
+		p.sendRawMessage(ChatColor.GOLD + "Type: "+b.getFlagsString()+"");
+		for (BlockFace face : b.getAllNextFaces())
+		{
+			String direction = face.toString().substring(0, 1).toUpperCase()+face.toString().substring(1).toLowerCase();
+			Integer nextid = b.getNextId(face);
+			String nextname = plugin.settingsmanager.getRoutingBlock(nextid).getName();
+			Integer nextlength = b.getNextDistance(face);
+			p.sendRawMessage(ChatColor.GOLD + direction+": "+nextname+" (#"+nextid.toString()+")("+nextlength.toString()+" blocks)");
+		}
+		if (b.hasSignConfig())
+			p.sendRawMessage(ChatColor.GOLD + "Conditions: "+b.getConditions());
 		p.sendRawMessage(ChatColor.AQUA + "---------------------");
 	}
 
@@ -341,9 +152,9 @@ public class UtilManager {
     		if (le instanceof Minecart)
     		{
     			double distance = le.getLocation().toVector().distance(p.getLocation().toVector());
-    			if (plugin.settingsManager.vehicles.containsKey(le.getEntityId()) && plugin.settingsManager.vehicles.get(le.getEntityId()).owner.equals(p) && distance < closest)
+    			if (plugin.settingsmanager.isMinecart(le) && plugin.settingsmanager.getMinecart(le).getOwner().equals(p) && distance < closest)
     			{
-    				closestCart = plugin.settingsManager.vehicles.get(le.getEntityId());
+    				closestCart = plugin.settingsmanager.getMinecart(le);
     				closest = distance;
     			}
     		}

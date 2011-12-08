@@ -36,9 +36,11 @@ public class Route {
 		destination = dest;
 	}
 	
-	public int getNextDestination()
+	public Integer getNextDestination()
 	{
 		if (!hasPath())
+			return null;
+		if (position == path.size())
 			return -1;
 		int next = path.get(position);
 		position++;

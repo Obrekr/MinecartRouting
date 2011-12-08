@@ -1,21 +1,21 @@
-package MinecartRouting.RoutingBlockType;
+package MinecartRouting.Flags;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 
 import MinecartRouting.MinecartRoutingMinecart;
+import MinecartRouting.RoutingBlock;
 
-public class Switch implements RoutingBlockType{
+public class Switch implements Flag{
 
-	RoutingBlockTypes type = RoutingBlockTypes.SWITCH;
-	RoutingBlockActionTimes time = RoutingBlockActionTimes.PREBLOCK;
-	Boolean ignoreredstone;
-	Boolean redstone;
+	private Flags type = Flags.SWITCH;
+	private ActionTimes time = ActionTimes.PREBLOCK;
+	private Boolean ignoreredstone;
+	private Boolean redstone;
 	
 	public Switch(List<LinkedHashMap<String, Object>> options)
 	{
@@ -43,10 +43,10 @@ public class Switch implements RoutingBlockType{
 	}
 	
 	@Override
-	public void doAction(Block b, MinecartRoutingMinecart cart)
+	public void doAction(RoutingBlock b, MinecartRoutingMinecart cart)
 	{
-		Player p = cart.owner;
-		if (!( (p.hasPermission("minecartrouting.benefit.switch.own") && plugin.util.isOwner(b, p)) || p.hasPermission("minecartrouting.benefit.switch.other")))
+		Player p = cart.getOwner();
+		if (!( (p.hasPermission("minecartrouting.benefit.switch.own") && b.isOwner(p)) || p.hasPermission("minecartrouting.benefit.switch.other")))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to benefit from switch flags");
 			return;
@@ -56,19 +56,21 @@ public class Switch implements RoutingBlockType{
 			return;
 		
 		plugin.debug("Switching...");
-		BlockFace origin = plugin.util.velocityToDirection(cart.cart.getVelocity());
+		BlockFace origin = plugin.util.velocityToDirection(cart.getVelocity());
 		BlockFace destination = plugin.blockmanager.getDirection(b, cart);
-		plugin.blockmanager.setRail(b.getRelative(BlockFace.UP), origin, destination);
+		if (destination == null)
+			return;
+		plugin.blockmanager.setRail(b.getLocation().getBlock().getRelative(BlockFace.UP), origin, destination);
 	}
 	
 	@Override
-	public RoutingBlockTypes getBlockType()
+	public Flags getBlockType()
 	{
 		return type;
 	}
 
 	@Override
-	public RoutingBlockActionTimes getActionTime()
+	public ActionTimes getActionTime()
 	{
 		return time;
 	}
