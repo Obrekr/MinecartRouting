@@ -1,3 +1,9 @@
+0.3.1
+  - [F] routingblocks not working correctly
+  - [F] event priorities
+  - [F] improved searching for next routingblocks
+  - [F] made lines on signs case-insensitiv
+
 0.3.0:
   - [F] permissions when updating only rails
   - [F] graph of railsystem not updating properly
