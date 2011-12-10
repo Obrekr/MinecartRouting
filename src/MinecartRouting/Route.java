@@ -7,13 +7,11 @@ public class Route {
 	
 	private Integer destination = -1;
 	private List<Integer> path = new ArrayList<Integer>();
-	private Integer position = 1;
 	
-	public Route(Integer dest, List<Integer> l, Integer pos)
+	public Route(Integer dest, List<Integer> l)
 	{
 		destination = dest;
 		path = l;
-		position = pos;
 	}
 	
 	public Route(int dest)
@@ -26,25 +24,19 @@ public class Route {
 		path = l;
 	}
 	
-	public void setPosition(int pos)
-	{
-		position = pos;
-	}
-	
 	public void setDestination(int dest)
 	{
 		destination = dest;
 	}
 	
-	public Integer getNextDestination()
+	public Integer getNextDestination(int id)
 	{
-		if (!hasPath())
+		if (!hasPath() || !path.contains(id))
 			return null;
-		if (position == path.size())
-			return -1;
-		int next = path.get(position);
-		position++;
-		return next;
+		int pos = path.indexOf(id);
+		if (pos == path.lastIndexOf(destination))
+			return null;
+		return path.get(pos+1);
 	}
 	
 	public int getDestination()

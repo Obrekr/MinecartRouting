@@ -24,6 +24,7 @@ public class MinecartRoutingMinecart {
 	private Location lastOnBlock;
 	private BlockFace lastOnDirection;;
 	private Location catchedBlock;
+	private boolean hasReachedDestination = false;
 	
 	public MinecartRoutingMinecart (Minecart minecart){
 		cart = minecart;
@@ -56,6 +57,50 @@ public class MinecartRoutingMinecart {
 	{
 		if (route != null)
 			return true;
+		return false;
+	}
+	
+	public boolean hasPositionChanged(Block b, ActionTimes time)
+	{
+		Location loc = null;
+		BlockFace dir = null;
+		switch (time)
+		{
+		case ONBLOCK:
+			loc =  lastOnBlock;
+			dir = lastOnDirection;
+			break;
+		case PREBLOCK:
+			loc = lastPreBlock;
+			dir = lastPreDirection;
+			break;
+		}
+		if (loc == null || dir == null)
+			return true;
+		Location newloc = b.getLocation();
+		BlockFace incdir = plugin.util.velocityToDirection(cart.getVelocity().normalize());
+		if (!incdir.equals(dir)  || !newloc.equals(loc))
+			return true;
+		return false;
+	}
+
+	public boolean hasReachedDestination()
+	{
+		return hasReachedDestination;
+	}
+	
+	public boolean hasReachedDestination(int id)
+	{
+		if (hasReachedDestination == true)
+			return false;
+		if (!hasRoute())
+			return false;
+		if (route.getDestination() == id)
+		{
+			removeRoute();
+			hasReachedDestination = true;
+			return true;
+		}
 		return false;
 	}
 	
@@ -94,33 +139,10 @@ public class MinecartRoutingMinecart {
 		return cart;
 	}
 	
-	public boolean hasPositionChanged(Block b, ActionTimes time)
-	{
-		Location loc = null;
-		BlockFace dir = null;
-		switch (time)
-		{
-		case ONBLOCK:
-			loc =  lastOnBlock;
-			dir = lastOnDirection;
-			break;
-		case PREBLOCK:
-			loc = lastPreBlock;
-			dir = lastPreDirection;
-			break;
-		}
-		if (loc == null || dir == null)
-			return true;
-		Location newloc = b.getLocation();
-		BlockFace incdir = plugin.util.velocityToDirection(cart.getVelocity().normalize());
-		if (!incdir.equals(dir)  || !newloc.equals(loc))
-			return true;
-		return false;
-	}
-	
 	public void setDestination(Integer destid)
 	{
 		route =  new Route(destid);
+		hasReachedDestination = false;
 	}
 	
 	public void setLastBlock(RoutingBlock routingBlock, ActionTimes time)

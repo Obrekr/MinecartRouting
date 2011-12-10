@@ -1,5 +1,6 @@
 package MinecartRouting.Listeners;
 
+import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Vehicle;
@@ -82,8 +83,10 @@ public class MinecartRoutingVehicleListener extends VehicleListener{
 		
 		if (!cart.hasPositionChanged(b.getBlock(), time))	
 			return;
+		if (cart.hasReachedDestination(b.getId()))
+			cart.getOwner().sendRawMessage(ChatColor.AQUA + "Your cart #"+cart.getId()+" has reached its destination!");
 		
-		plugin.debug("RoutingBlock found! {0}", b.getId());
+		plugin.debug("RoutingBlock found! {0}, {1}", b.getId(), time);
 		b.doActions(cart, time);
     }
     

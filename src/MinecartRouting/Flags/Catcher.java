@@ -32,7 +32,7 @@ public class Catcher implements Flag
 	public void doAction(RoutingBlock b, MinecartRoutingMinecart cart)
 	{
 		Player p = cart.getOwner();
-		if (!( (p.hasPermission("minecartrouting.benefit.catcher.own") && b.isOwner(p)) || p.hasPermission("minecartrouting.catcher.switch.other")))
+		if (!( (p.hasPermission("minecartrouting.benefit.catcher.own") && b.isOwner(p)) || p.hasPermission("minecartrouting.benefit.catcher.other")))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to benefit from catcher flags");
 			return;

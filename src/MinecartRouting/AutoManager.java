@@ -22,6 +22,9 @@ public class AutoManager
 	
 	public BlockFace getDirection(RoutingBlock b, Player p, MinecartRoutingMinecart v)
 	{
+		if (v.hasReachedDestination())
+			return BlockFace.SELF;
+		
 		if (!v.getRoute().hasPath())
 		{
 			int start = b.getId();
@@ -43,18 +46,11 @@ public class AutoManager
 			}
 		}
 		
-		Integer nextid = v.getRoute().getNextDestination();
+		Integer nextid = v.getRoute().getNextDestination(b.getId());
 		plugin.debug("Next RoutingBlock: {0}", nextid);
 		
 		if (nextid == null)
 			return null;
-		
-		if (nextid == -1)
-		{	
-			v.removeRoute();
-			v.getOwner().sendRawMessage(ChatColor.AQUA + "Your cart #"+v.getId()+" has reached its destination!");
-			return BlockFace.SELF;
-		}
 		
 		BlockFace fa = b.getNextFace(nextid);
 		if (fa == null)

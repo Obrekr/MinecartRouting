@@ -1,3 +1,9 @@
+0.3.2
+  - [F] redstone change is triggered on all adjacent blocks
+  - [F] autorouting issues related to redstone triggering
+  - [F] reaching destination message
+  - [F] permissions for catcher flag
+
 0.3.1
   - [F] routingblocks not working correctly
   - [F] event priorities

@@ -1,6 +1,9 @@
 package MinecartRouting.Listeners;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -48,20 +51,47 @@ public class MinecartRoutingBlockListener extends BlockListener {
 		if (!(event.getOldCurrent() == 0 && event.getNewCurrent() > 0))
 			return;
 
-		RoutingBlock b = findRoutingBlock(event.getBlock());
-		if (b == null)
-			return;
-		
-		plugin.debug("Redstone changed!");
+		List<RoutingBlock> blocks = findRoutingBlock(event.getBlock());
 
-		Location loc = b.getLocation().clone();
+		for (RoutingBlock b : blocks)
+		{
+			plugin.debug("Redstone changed!");
+			MinecartRoutingMinecart cart = getClosestCart(b.getLocation());
+	    	if (cart != null && b.isRedstoneTime())
+			{
+	    		cart.unsetLastBlock(ActionTimes.ONBLOCK);
+	    		DoActionsRunnable action = new DoActionsRunnable(b, cart);
+	    		Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, action, 2);
+	    		b.setLastRedstoneTime();
+	    	}
+	    }
+	}
+	
+	private List<RoutingBlock> findRoutingBlock(Block start)
+	{
+		List<RoutingBlock> foundBlocks = new ArrayList<RoutingBlock>();
+		BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+		for (BlockFace dir : directions)
+		{
+			Block b = start.getRelative(dir);
+			if (plugin.util.isRail(b) && plugin.settingsmanager.isRoutingBlock(b.getRelative(BlockFace.DOWN).getLocation()))
+				foundBlocks.add(plugin.settingsmanager.getRoutingBlock(b.getRelative(BlockFace.DOWN).getLocation()));
+			if (plugin.settingsmanager.isRoutingBlock(b.getLocation()))
+				foundBlocks.add(plugin.settingsmanager.getRoutingBlock(b.getLocation()));
+		}
+		return foundBlocks;
+	}
+	
+	private MinecartRoutingMinecart getClosestCart(Location start)
+	{
+		Location loc = start.clone();
 		loc.setX(loc.getX() + 0.5);
 		loc.setY(loc.getY() + 1.5);
 		loc.setZ(loc.getZ() + 0.5);
 		
 		double closest = Double.MAX_VALUE;
     	Minecart closestCart = null;
-    	for (Entity le : b.getLocation().getBlock().getChunk().getEntities())
+    	for (Entity le : loc.getBlock().getChunk().getEntities())
     	{
     		if (le instanceof Minecart)
     		{
@@ -77,32 +107,13 @@ public class MinecartRoutingBlockListener extends BlockListener {
     	if (closestCart == null || closest > 0.4)
     	{	
     		plugin.debug("no cart found or distance too high: {0}", closest);
-    		return;
+    		return null;
     	}
     	if (!plugin.settingsmanager.isMinecart(closestCart))
     		plugin.settingsmanager.putMinecart(new MinecartRoutingMinecart(closestCart));
     	
-    	MinecartRoutingMinecart cart = plugin.settingsmanager.getMinecart(closestCart);
     	plugin.debug("Vehicle found! {0}", closest);
-		
-    	cart.unsetLastBlock(ActionTimes.ONBLOCK);
-    	
-    	DoActionsRunnable action = new DoActionsRunnable(b, cart);
-    	Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, action, 2);
-	}
-	
-	private RoutingBlock findRoutingBlock(Block start)
-	{
-		BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
-		for (BlockFace dir : directions)
-		{
-			Block b = start.getRelative(dir);
-			if (plugin.util.isRail(b) && plugin.settingsmanager.isRoutingBlock(b.getRelative(BlockFace.DOWN).getLocation()))
-				return plugin.settingsmanager.getRoutingBlock(b.getRelative(BlockFace.DOWN).getLocation());
-			if (plugin.settingsmanager.isRoutingBlock(b.getLocation()))
-				return plugin.settingsmanager.getRoutingBlock(b.getLocation());
-		}
-		return null;
+    	return plugin.settingsmanager.getMinecart(closestCart);
 	}
 	
 }

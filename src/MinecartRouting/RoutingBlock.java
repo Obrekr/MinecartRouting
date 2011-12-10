@@ -3,6 +3,7 @@ package MinecartRouting;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class RoutingBlock
 	private Location location;
 	private String owner;
 	private String conditions;
+	private Date lastRedstoneTime;
 	
 	private Map<BlockFace, List<String>> from_options = new HashMap<BlockFace, List<String>>();
 	private Map<String, BlockFace> fromoptions_to = new HashMap<String, BlockFace>();
@@ -209,6 +211,11 @@ public class RoutingBlock
 		conditions = c;
 	}
 	
+	public void setLastRedstoneTime()
+	{
+		lastRedstoneTime = new Date();
+	}
+	
 	public void setNext(BlockFace face, int id, int distance)
 	{
 		nextid.put(face, id);
@@ -255,6 +262,15 @@ public class RoutingBlock
 		return false;
 	}
 
+	public boolean isRedstoneTime()
+	{
+		if (lastRedstoneTime == null)
+			return true;
+		if (new Date().getTime() - lastRedstoneTime.getTime() > 350)
+			return true;
+		return false;
+	}
+	
 	private void reloadFromLoc()
 	{
 		String query = "SELECT * FROM mr_blocks WHERE x='"+location.getBlockX()+"' AND y='"+location.getBlockY()+"' AND z="+location.getBlockZ()+" AND world='"+location.getWorld().getName()+"';";

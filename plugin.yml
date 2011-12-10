@@ -1,15 +1,15 @@
 name: MinecartRouting
 main: MinecartRouting.MinecartRouting
-version: 0.3.1
+version: 0.3.3
 permissions:
     minecartrouting.create.*:
         description: Allows player to create/modify all kind of Routingblocks
+        default: op
         children:
             minecartrouting.create.*.own: true
             minecartrouting.create.*.other: true
     minecartrouting.create.*.own:
         description: Allows player to create/modify own Routingblocks
-        default: op
         children:
             minecartrouting.create.acceleration.own: true
             minecartrouting.create.launcher.own: true
@@ -17,7 +17,6 @@ permissions:
             minecartrouting.create.switch.own: true
     minecartrouting.create.*.other:
         description: Allows player to modify others Routingblocks
-        default: op
         children:
             minecartrouting.create.acceleration.other: true
             minecartrouting.create.launcher.other: true
@@ -26,12 +25,12 @@ permissions:
     
     minecartrouting.break.*:
         description: Allows player to break all kind of Routingblocks
+        default: op
         children:
             minecartrouting.break.*.own: true
             minecartrouting.break.*.other: true
     minecartrouting.break.*.own:
         description: Allows player to break own Routingblocks
-        default: op
         children:
             minecartrouting.break.acceleration.own: true
             minecartrouting.break.launcher.own: true
@@ -39,7 +38,6 @@ permissions:
             minecartrouting.break.switch.own: true
     minecartrouting.break.*.other:
         description: Allows player to break others Routingblocks
-        default: op
         children:
             minecartrouting.break.acceleration.other: true
             minecartrouting.break.launcher.other: true
@@ -48,12 +46,12 @@ permissions:
     
     minecartrouting.benefit.*:
         description: Allows player to benefit from all kind of Routingblocks
+        default: true
         children:
             minecartrouting.benefit.*.own: true
             minecartrouting.benefit.*.other: true
     minecartrouting.benefit.*.own:
         description: Allows player to benefit from own Routingblocks
-        default: true
         children:
             minecartrouting.benefit.acceleration.own: true
             minecartrouting.benefit.launcher.own: true
@@ -61,7 +59,6 @@ permissions:
             minecartrouting.benefit.switch.own: true
     minecartrouting.benefit.*.other:
         description: Allows player to benefit from others Routingblocks
-        default: true
         children:
             minecartrouting.benefit.acceleration.other: true
             minecartrouting.benefit.launcher.other: true
