@@ -2,6 +2,7 @@ debug: false
 max-speed: 12
 tool-item: 271
 sign-radius: 3
+sign-can-define-type: false
 slow-when-empty: false
 routingblocks:
 - title: Booster

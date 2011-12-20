@@ -13,6 +13,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 
 import MinecartRouting.Flags.ActionTimes;
@@ -23,13 +25,13 @@ public class RoutingBlock
 {
 	private static MinecartRouting plugin = (MinecartRouting) Bukkit.getServer().getPluginManager().getPlugin("MinecartRouting");
 	private Integer id;
-	private Integer blockid;
 	private String name;
 	private RoutingBlockType type;
 	private Location location;
 	private String owner;
 	private String conditions;
 	private Date lastRedstoneTime;
+	private boolean typebysign = false;
 	
 	private Map<BlockFace, List<String>> from_options = new HashMap<BlockFace, List<String>>();
 	private Map<String, BlockFace> fromoptions_to = new HashMap<String, BlockFace>();
@@ -39,14 +41,14 @@ public class RoutingBlock
 	private Map<BlockFace, Integer> nextid = new HashMap<BlockFace, Integer>();
 	private Map<BlockFace, Integer> nextdistance = new HashMap<BlockFace, Integer>();
 	
-	public RoutingBlock(Location loc, Player p, String cond, String nam)
+	public RoutingBlock(Location loc, Player p, String cond, String nam, RoutingBlockType ty, boolean tybysign)
 	{
 		location = loc;
-		blockid = loc.getBlock().getTypeId();
 		owner = p.getName();
 		name = nam;
 		conditions = cond;
-		type = plugin.settingsmanager.getRoutingBlockType(blockid);
+		type = ty;
+		typebysign = tybysign;
 	}
 	
 	public RoutingBlock(Integer i)
@@ -68,8 +70,7 @@ public class RoutingBlock
 			if (flag.getActionTime().equals(time))
 				flag.doAction(this, cart);
 		}
-		cart.setLastBlock(this, time);
-		
+		cart.setLastBlock(this, time);	
 	}
 
 	public void reload()
@@ -91,10 +92,13 @@ public class RoutingBlock
 	public void save()
 	{
 		if (id == null)
-		{	String query = "INSERT INTO `mr_blocks` ('x', 'y', 'z','world', 'owner') VALUES("+location.getBlockX()+","+location.getBlockY()+","+location.getBlockZ()+",'"+location.getWorld().getName()+"','"+owner+"');";
+		{	String query = "INSERT INTO `mr_blocks` ('x', 'y', 'z','world', 'owner', 'type') VALUES("+location.getBlockX()+","+location.getBlockY()+","+location.getBlockZ()+",'"+location.getWorld().getName()+"','"+owner+"', 'null');";
 			plugin.database.insert(query);
 		}
-
+		
+		if (typebysign)
+			plugin.database.update("UPDATE `mr_blocks` SET type='"+type.getTitel()+"' WHERE x='"+location.getBlockX()+"' AND y='"+location.getBlockY()+"' AND z="+location.getBlockZ()+" AND world='"+location.getWorld().getName()+"';");
+		
 		String query = "UPDATE `mr_blocks` SET conditions='"+conditions+"', name='"+name+"' WHERE x='"+location.getBlockX()+"' AND y='"+location.getBlockY()+"' AND z="+location.getBlockZ()+" AND world='"+location.getWorld().getName()+"';";
 		plugin.database.update(query);
 
@@ -128,6 +132,20 @@ public class RoutingBlock
 		nextid.clear();
 		
 		plugin.debug("AutoDirections: {0}", autodirections.toString());
+	}
+	
+	public void updateTypeBySign()
+	{
+		BlockState b = location.getBlock().getRelative(BlockFace.DOWN).getState();
+		if (b instanceof Sign)
+		{
+			Sign s = (Sign) b;
+			if (s.getLine(0).matches("\\[type\\]"))
+			{	
+				type = plugin.settingsmanager.getRoutingBlockType(s.getLine(1));
+				typebysign = true;
+			}
+		}
 	}
 	
 	public int getId()
@@ -191,9 +209,9 @@ public class RoutingBlock
 		return owner;
 	}
 	
-	public String getFlagsString()
+	public String getTitel()
 	{
-		return type.getFlagsString();
+		return type.getTitel();
 	}
 	
 	public String getConditions()
@@ -240,6 +258,11 @@ public class RoutingBlock
 		return false;
 	}
 	
+	public boolean isDefinedBySign()
+	{
+		return typebysign;
+	}
+	
 	public boolean isAutoDirection(BlockFace face)
 	{
 		if (autodirections.contains(face))
@@ -256,9 +279,8 @@ public class RoutingBlock
 	
 	public boolean isValid()
 	{
-		if (id != null && blockid != null && type != null && location != null && owner != null && name != null && conditions != null)
+		if (id != null && type != null && location != null && owner != null && name != null && conditions != null)
 			return true;
-		
 		return false;
 	}
 
@@ -266,7 +288,7 @@ public class RoutingBlock
 	{
 		if (lastRedstoneTime == null)
 			return true;
-		if (new Date().getTime() - lastRedstoneTime.getTime() > 350)
+		if ((new Date().getTime() - lastRedstoneTime.getTime()) > 350)
 			return true;
 		return false;
 	}
@@ -327,9 +349,20 @@ public class RoutingBlock
 		if (x != null && y != null && z != null && world != null)
 		{
 			location = new Location(Bukkit.getWorld(world), x, y, z);
-			blockid = location.getBlock().getTypeId();
-			type = plugin.settingsmanager.getRoutingBlockType(blockid);
+			
 		}
+		String typ = result.getString("type");
+		if (typ != null && !typ.matches("null"))
+		{	
+			if (plugin.settingsmanager.isRoutingBlockType(typ.toLowerCase()))
+			{
+				typebysign = true;
+				type = plugin.settingsmanager.getRoutingBlockType(typ.toLowerCase());
+				plugin.debug("loading from titel");
+			}else
+				type = plugin.settingsmanager.getRoutingBlockType(location.getBlock().getTypeId());
+		}else
+			type = plugin.settingsmanager.getRoutingBlockType(location.getBlock().getTypeId());
 		
 		parseConditions();
 		

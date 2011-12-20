@@ -78,7 +78,7 @@ public class AutoManager
 				if (b.isAutoDirection(face))
 					b.setNext(face, next.getRoutingBlock().getId(), next.getDistance());
 				
-				if (next.getDirection() != null && next.getRoutingBlock().isAutoDirection(next.getDirection()))
+				if (next.getRoutingBlock().isAutoDirection(next.getDirection().getOppositeFace()))
 				{
 					next.getRoutingBlock().setNext(next.getDirection().getOppositeFace(), b.getId(), next.getDistance());
 					next.getRoutingBlock().save();

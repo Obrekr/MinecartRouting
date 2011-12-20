@@ -97,19 +97,9 @@ public class RoutingBlockType {
 		return names;
 	}
 	
-	public String getFlagsString()
+	public String getTitel()
 	{
-		String names = "";
-		List<Flags> types = getRoutingBlockFlags();
-		for (int i = 0; i < types.size(); i++)
-		{
-			Flags type = types.get(i);
-			names += type.toString().substring(0, 1).toUpperCase() + type.toString().substring(1).toLowerCase();
-			
-			if (i != types.size() -1)
-				names += ", ";
-		}
-		return "{" + names + "}";
+		return title;
 	}
 
 	public boolean hasSignConfig()

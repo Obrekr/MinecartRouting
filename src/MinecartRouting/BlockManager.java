@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Monster;
@@ -198,6 +199,27 @@ public class BlockManager {
 	public boolean add(Block b, Player p)
 	{
 		RoutingBlockType type = plugin.settingsmanager.getRoutingBlockType(b.getTypeId());
+		boolean bysign = false;
+		if (type == null && plugin.settingsmanager.signcandefinetype)
+		{	
+			BlockState block = b.getRelative(BlockFace.DOWN).getState();
+			if (block instanceof Sign)
+			{
+				Sign s = (Sign) block;
+				if (s.getLine(0).toLowerCase().matches("\\[type\\]"))
+				{
+					type = plugin.settingsmanager.getRoutingBlockType(s.getLine(1).toLowerCase());
+					bysign = true;
+				}
+			}
+		}
+		
+		if (type == null)
+		{	
+			plugin.debug("no type found!");
+			return false;
+		}
+		
 		if (!hasCreatePermission(type, p))
 		{	
 			p.sendMessage(ChatColor.DARK_RED + "Don't have permission to create this RoutingBlock");
@@ -222,7 +244,8 @@ public class BlockManager {
 			return false;
 		}
 		
-		RoutingBlock rb = new RoutingBlock(location, p, conditions, name);
+		plugin.debug("{0},{1}", type.getTitel(), bysign);
+		RoutingBlock rb = new RoutingBlock(location, p, conditions, name, type, bysign);
 		rb.save();
 		rb.reload();
 		plugin.settingsmanager.putRoutingBlock(rb);
@@ -230,9 +253,10 @@ public class BlockManager {
 		plugin.debug("Block added");
 		
 		if (rb.hasSignConfig())
+		{	
 			plugin.automanager.update(rb);
-		
-		plugin.updateGraph();
+			plugin.updateGraph();
+		}
 		
 		p.sendRawMessage(ChatColor.AQUA + "Block added!");
 		plugin.debug("Block added: {0}", rb.getId());
@@ -284,6 +308,8 @@ public class BlockManager {
 			return false;
 		}
 		
+		if (b.isDefinedBySign())
+			b.updateTypeBySign();
 		b.setName(name);
 		b.setConditions(conditions);
 		b.save();

@@ -36,7 +36,11 @@ public class MinecartRoutingPlayerListener extends PlayerListener {
 		Block b = null;
 		if (plugin.settingsmanager.isRoutingBlockType(event.getClickedBlock()))
 			b = event.getClickedBlock();
-		if (plugin.util.isRail(event.getClickedBlock()) && plugin.settingsmanager.isRoutingBlockType(event.getClickedBlock().getRelative(BlockFace.DOWN)))
+		else if (plugin.util.isRail(event.getClickedBlock()) && plugin.settingsmanager.isRoutingBlockType(event.getClickedBlock().getRelative(BlockFace.DOWN)))
+			b = event.getClickedBlock().getRelative(BlockFace.DOWN);
+		else if (event.getClickedBlock().getRelative(BlockFace.DOWN).getState() instanceof Sign)
+			b = event.getClickedBlock();
+		else if (event.getClickedBlock().getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getState() instanceof Sign)
 			b = event.getClickedBlock().getRelative(BlockFace.DOWN);
 		if (b == null)
 			return;

@@ -33,6 +33,7 @@ public class SettingsManager {
 	
 	private Map<Integer, MinecartRoutingMinecart> vehicles = new HashMap<Integer, MinecartRoutingMinecart>();
 	private Map<Integer, RoutingBlockType> routingblocktypes = new HashMap<Integer, RoutingBlockType>();
+	private Map<String, RoutingBlockType> routingblocktypenames = new HashMap<String, RoutingBlockType>();
 	private Map<Location, RoutingBlock> blocksbylocation = new HashMap<Location, RoutingBlock>();
 	private Map<Integer, RoutingBlock> blocksbyid = new HashMap<Integer, RoutingBlock>();
 	private Map<String, RoutingBlock> blocksbyname = new HashMap<String, RoutingBlock>();
@@ -42,6 +43,7 @@ public class SettingsManager {
 	public int signradius;
 	public int maxspeed;
 	public boolean slowwhenempty;
+	public boolean signcandefinetype;
 
 	public SettingsManager(MinecartRouting instance)
 	{
@@ -86,6 +88,7 @@ public class SettingsManager {
 	    signradius = config.getInt("sign-radius");
 		maxspeed = config.getInt("max-speed");
 		slowwhenempty = config.getBoolean("slow-when-empty");
+		signcandefinetype = config.getBoolean("sign-can-define-type");
 		
 		addRoutingBlockTypes(configroutingblocks);
 		loadRoutingBlocks();
@@ -134,11 +137,15 @@ public class SettingsManager {
 		{
 			RoutingBlockType block = new RoutingBlockType(map, flagcounts, plugin);
 			if (block.isValid())	 
+			{	
 				routingblocktypes.put(block.getBlockId(), block);
+				routingblocktypenames.put(block.getTitel().toLowerCase(), block);
+			}
 			else
 				plugin.debug("invalid block found: {0}\n {1}", block.toString(), map);
 		}
 		plugin.debug("Blocks: {0}\n", routingblocktypes.toString());
+		plugin.debug("All type names: {0}", routingblocktypenames.keySet());
 	}
 	
 	public void loadRoutingBlocks()
@@ -152,7 +159,10 @@ public class SettingsManager {
 			while (result.next())
 			{
 				RoutingBlock block = new RoutingBlock(result.getInt("id"));
-				putRoutingBlock(block);
+				if (block.isValid())
+					putRoutingBlock(block);
+				else
+					plugin.debug("invalid block found on loading");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -225,6 +235,11 @@ public class SettingsManager {
 		return routingblocktypes.containsKey(b.getTypeId());
 	}
 	
+	public boolean isRoutingBlockType(String s)
+	{
+		return routingblocktypenames.containsKey(s);
+	}
+	
 	public RoutingBlock getRoutingBlock(Location loc)
 	{
 		return blocksbylocation.get(loc);
@@ -253,6 +268,11 @@ public class SettingsManager {
 	public RoutingBlockType getRoutingBlockType(int id)
 	{
 		return routingblocktypes.get(id);
+	}
+	
+	public RoutingBlockType getRoutingBlockType(String s)
+	{
+		return routingblocktypenames.get(s);
 	}
 	
 	public int getNumberOfLoadedBlocks()

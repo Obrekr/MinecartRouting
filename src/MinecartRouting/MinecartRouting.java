@@ -98,12 +98,18 @@ public class MinecartRouting extends JavaPlugin{
 	
 	private void updateDatabase()
 	{
-		String createTabelOptions = "('id' INTEGER PRIMARY KEY, 'x' int(11) NOT NULL, 'y' int(11) NOT NULL, 'z' int(11) NOT NULL, 'world' varchar(25) NOT NULL, 'name' varchar(25) Default NULL, 'owner' varchar(16) Default NULL, 'conditions' TEXT Default NULL, 'north' INT Default NULL, 'north_length' INT Default NULL, 'east' INT Default NULL, 'east_length' INT Default NULL, 'south' INT Default NULL, 'south_length' INT Default NULL, 'west' INT Default NULL, 'west_length' INT Default NULL, UNIQUE('x', 'y', 'z', 'world'))";
+		String createTabelOptions = "('id' INTEGER PRIMARY KEY, 'x' int(11) NOT NULL, 'y' int(11) NOT NULL, 'z' int(11) NOT NULL, 'world' varchar(25) NOT NULL, 'name' varchar(25) Default NULL, 'owner' varchar(16) Default NULL, 'conditions' TEXT Default NULL, 'north' INT Default NULL, 'north_length' INT Default NULL, 'east' INT Default NULL, 'east_length' INT Default NULL, 'south' INT Default NULL, 'south_length' INT Default NULL, 'west' INT Default NULL, 'west_length' INT Default NULL, type varchar(25), UNIQUE('x', 'y', 'z', 'world'))";
 		
 		if (!database.existsTable("mr_blocks"))
 		{
 			database.execute("CREATE TABLE IF NOT EXISTS 'mr_blocks'"+createTabelOptions+";");
 			log("Created table 'mr_blocks'");
-		}	
+		}
+		
+		if (!database.existsColumn("type", "mr_blocks"))
+		{
+			database.execute("ALTER TABLE mr_blocks ADD type varchar(25)");
+			log("Added column type to database");
+		}
 	}
 }

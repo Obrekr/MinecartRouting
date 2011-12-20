@@ -1,3 +1,11 @@
+0.4.0
+  - [F] problems when adding a block to databases created before 0.3.2
+  - [F] updating routingblock adds wrong connection to adjacent blocks
+  - [+] redstone under routingblock triggers blockactions
+  - [+] config file option to allow signs to define the routingblock type
+  - [+] routingblock type can be defined by sign beneath with 1. line [type] 2. line <Titel of the block>
+  - [C] block info shows title of the block and no longer the flags
+
 0.3.2
   - [F] redstone change is triggered on all adjacent blocks
   - [F] autorouting issues related to redstone triggering

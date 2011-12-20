@@ -124,7 +124,7 @@ public class UtilManager {
 		p.sendRawMessage(ChatColor.GOLD + "Name: "+b.getName()+" (#"+b.getId()+")");
 		p.sendRawMessage(ChatColor.GOLD + "Owner: "+b.getOwner()+"");
 		p.sendRawMessage(ChatColor.GOLD + "Position: "+b.getLocation().getBlockX()+" | "+b.getLocation().getBlockY()+" | "+b.getLocation().getBlockZ()+"");
-		p.sendRawMessage(ChatColor.GOLD + "Type: "+b.getFlagsString()+"");
+		p.sendRawMessage(ChatColor.GOLD + "Type: "+b.getTitel()+"");
 		for (BlockFace face : b.getAllNextFaces())
 		{
 			String direction = face.toString().substring(0, 1).toUpperCase()+face.toString().substring(1).toLowerCase();

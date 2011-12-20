@@ -70,7 +70,7 @@ public class MinecartRoutingBlockListener extends BlockListener {
 	private List<RoutingBlock> findRoutingBlock(Block start)
 	{
 		List<RoutingBlock> foundBlocks = new ArrayList<RoutingBlock>();
-		BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+		BlockFace[] directions = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.UP};
 		for (BlockFace dir : directions)
 		{
 			Block b = start.getRelative(dir);
